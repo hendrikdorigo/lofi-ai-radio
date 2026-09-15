@@ -74,6 +74,41 @@ MOODS = {
             "relaxar.\n\n#lofi #medieval #studymusic #tavernmusic"
         ),
     },
+    "classic_rock": {
+        "nome": "Classic Rock 24/7",
+        "prompts_musica": [
+            (
+                "instrumental classic rock track, 1970s style, energetic electric "
+                "guitar riffs, driving drums, bluesy guitar solo, warm analog "
+                "studio sound, no vocals"
+            ),
+            (
+                "instrumental hard rock jam, gritty distorted guitar, powerful "
+                "steady drumbeat, bass-driven groove, arena rock energy, no vocals"
+            ),
+            (
+                "instrumental blues rock track, slow burning electric guitar lead, "
+                "shuffle drum groove, smoky bar atmosphere, expressive and raw, "
+                "no vocals"
+            ),
+            (
+                "instrumental southern rock track, twangy slide guitar, upbeat "
+                "groove, live-band energy, warm vintage recording texture, "
+                "no vocals"
+            ),
+        ],
+        "prompt_fundo": (
+            "vintage rock concert stage at night, electric guitars and amplifiers, "
+            "dramatic stage lighting, smoke haze, retro 1970s aesthetic, painterly "
+            "illustration, vertical 9:16 composition, no text, no watermark, no people"
+        ),
+        "titulo_live": "Classic Rock 24/7 — Rock Instrumental Gerado por IA 🎸🔥",
+        "descricao_live": (
+            "Uma rádio contínua de rock clássico instrumental, composta "
+            "inteiramente por IA — riffs de guitarra, bateria e groove non-stop.\n\n"
+            "#classicrock #rock #instrumental #radio24h"
+        ),
+    },
 }
 
 
