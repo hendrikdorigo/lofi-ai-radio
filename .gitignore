@@ -1,0 +1,15 @@
+# Secrets
+config/.env
+
+# Faixas e playlists geradas (áudio)
+assets/faixas/**/*.mp3
+assets/faixas/**/catalogo.json
+assets/playlists/**/*.mp3
+assets/fundo/**/*.png
+!assets/**/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

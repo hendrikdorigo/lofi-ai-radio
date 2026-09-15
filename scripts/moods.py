@@ -1,0 +1,84 @@
+"""
+Presets de "mood" (estilo) da rádio — define os prompts de música e de
+imagem de fundo pra cada variante do canal.
+
+Adicionar um novo mood é só adicionar uma entrada no dicionário MOODS.
+"""
+
+MOODS = {
+    "lofi_classical": {
+        "nome": "Lofi Clássico",
+        "prompts_musica": [
+            (
+                "lofi hip hop beat blended with a baroque piano theme in the style of "
+                "Bach, mellow, warm vinyl crackle, soft drums, relaxing study music, "
+                "no vocals"
+            ),
+            (
+                "lofi chillhop with a romantic-era string melody inspired by Chopin, "
+                "gentle piano, dusty vinyl texture, slow tempo, calm and melancholic, "
+                "no vocals"
+            ),
+            (
+                "lofi beat with a classical string quartet motif in the style of "
+                "Vivaldi, soft jazzy chords, tape hiss, cozy late-night study "
+                "atmosphere, no vocals"
+            ),
+            (
+                "lofi hip hop with a delicate classical flute and harp melody, "
+                "warm analog texture, slow relaxed drums, dreamy and nostalgic, "
+                "no vocals"
+            ),
+        ],
+        "prompt_fundo": (
+            "cozy candlelit study room at night, classical piano and old books, "
+            "warm lamp light, rain on the window, painterly illustration, "
+            "vertical 9:16 composition, no text, no watermark, no people"
+        ),
+        "titulo_live": "Lofi Clássico 24/7 — Música de Estudo com IA 🎻📚",
+        "descricao_live": (
+            "Uma rádio contínua de lofi inspirado em música clássica, composta "
+            "inteiramente por IA — perfeita pra estudar, trabalhar ou relaxar.\n\n"
+            "#lofi #musicaclassica #studymusic #lofihiphop"
+        ),
+    },
+    "lofi_medieval": {
+        "nome": "Lofi Medieval",
+        "prompts_musica": [
+            (
+                "lofi hip hop beat blended with medieval lute and hand drum melody, "
+                "tavern atmosphere, warm vinyl crackle, slow relaxed tempo, no vocals"
+            ),
+            (
+                "lofi chillhop with a medieval harp and flute theme, castle at night "
+                "ambience, soft dusty texture, calm and mysterious, no vocals"
+            ),
+            (
+                "lofi beat with medieval bard-style acoustic guitar and strings, "
+                "fireplace crackling underneath, cozy tavern mood, no vocals"
+            ),
+            (
+                "lofi hip hop with medieval choir pads and hurdy-gurdy melody, "
+                "slow tempo, warm analog texture, nostalgic and peaceful, no vocals"
+            ),
+        ],
+        "prompt_fundo": (
+            "cozy medieval tavern interior at night, fireplace, wooden tables, "
+            "candlelight, lute hanging on the wall, painterly illustration, "
+            "vertical 9:16 composition, no text, no watermark, no people"
+        ),
+        "titulo_live": "Lofi Medieval 24/7 — Taverna Relaxante com IA 🏰🔥",
+        "descricao_live": (
+            "Uma rádio contínua de lofi inspirado em música medieval, composta "
+            "inteiramente por IA — clima de taverna pra estudar, trabalhar ou "
+            "relaxar.\n\n#lofi #medieval #studymusic #tavernmusic"
+        ),
+    },
+}
+
+
+def obter_mood(nome: str) -> dict:
+    if nome not in MOODS:
+        disponiveis = ", ".join(MOODS)
+        raise ValueError(f"Mood '{nome}' não existe. Disponíveis: {disponiveis}")
+    return MOODS[nome]
