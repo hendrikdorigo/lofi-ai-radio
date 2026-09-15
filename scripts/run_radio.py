@@ -41,8 +41,11 @@ def main():
             rodar("01_generate_tracks.py", "--mood", args.mood, "--quantidade", str(args.faixas_iniciais))
 
         fundo = Path(__file__).parent.parent / "assets" / "fundo" / f"{args.mood}.png"
+        fundo_animado = Path(__file__).parent.parent / "assets" / "fundo" / f"{args.mood}.mp4"
         if not fundo.exists():
             rodar("02_generate_background.py", "--mood", args.mood)
+        if not fundo_animado.exists():
+            rodar("02b_animate_background.py", "--mood", args.mood)  # pula sozinha sem RUNWAY_API_KEY
 
         rodar("03_montar_playlist.py", "--mood", args.mood)
 

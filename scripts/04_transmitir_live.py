@@ -61,11 +61,18 @@ def transmitir(fundo: Path, playlist: Path, titulo: str, stream_key: str):
         f"borderw=2:bordercolor=black:x=30:y=30"
     )
 
+    # Fundo animado (etapa 2b, Runway) é um .mp4 que loopa como vídeo;
+    # sem isso, cai no fallback de imagem estática (loopa como frame parado).
+    if fundo.suffix.lower() == ".mp4":
+        entrada_fundo = ["-stream_loop", "-1", "-i", str(fundo)]
+    else:
+        entrada_fundo = ["-loop", "1", "-i", str(fundo)]
+
     subprocess.run(
         [
             "ffmpeg",
             "-re",
-            "-loop", "1", "-i", str(fundo),
+            *entrada_fundo,
             "-stream_loop", "-1", "-i", str(playlist),
             "-vf", f"scale={LARGURA}:{ALTURA},{filtro}",
             "-c:v", "libx264", "-preset", "veryfast", "-b:v", "2500k",
@@ -86,11 +93,15 @@ def main():
 
     mood = obter_mood(args.mood)
 
-    fundo = FUNDO_DIR / f"{args.mood}.png"
+    fundo_animado = FUNDO_DIR / f"{args.mood}.mp4"
+    fundo_estatico = FUNDO_DIR / f"{args.mood}.png"
+    fundo = fundo_animado if fundo_animado.exists() else fundo_estatico
     playlist = PLAYLISTS_DIR / f"{args.mood}.mp3"
 
     if not fundo.exists():
-        raise FileNotFoundError(f"Fundo não encontrado: {fundo}. Rode a etapa 2 primeiro.")
+        raise FileNotFoundError(
+            f"Fundo não encontrado ({fundo_animado} nem {fundo_estatico}). Rode a etapa 2 primeiro."
+        )
     if not playlist.exists():
         raise FileNotFoundError(f"Playlist não encontrada: {playlist}. Rode a etapa 3 primeiro.")
 

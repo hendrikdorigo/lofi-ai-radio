@@ -13,6 +13,8 @@ composição de terceiros — não tem risco de Content ID.
         ↓
 02_generate_background.py  → gera a imagem de fundo da live (uma vez por mood, via Ideogram)
         ↓
+02b_animate_background.py  → (opcional) anima o fundo com IA (Runway) — pula se RUNWAY_API_KEY vazia
+        ↓
 03_montar_playlist.py      → junta as faixas com crossfade suave numa playlist contínua
         ↓
 04_transmitir_live.py      → transmite fundo + playlist em loop pro YouTube Live via RTMP
@@ -51,6 +53,18 @@ python scripts/run_radio.py --mood lofi_classical --pular-preparo
 4. Rode o script — a live deve aparecer como "ao vivo" no YouTube Studio
    assim que o ffmpeg conectar
 
+## Fundo animado (opcional)
+
+Por padrão o fundo é uma imagem parada (Ideogram) que fica congelada a live
+inteira. Pra ter um loop animado de verdade (vela tremeluzindo, chuva
+caindo, tipo a estética "Lofi Girl"), preencha `RUNWAY_API_KEY` no `.env`
+com uma chave da [Runway API](https://dev.runwayml.com/) — a etapa
+`02b_animate_background.py` gera um clipe curto (5-10s) a partir da mesma
+imagem e ele passa a tocar em loop na live. Como é só **um clipe por mood**
+(não um por cena, como no projeto de Shorts), o custo é baixo — confira o
+preço atual em [docs.dev.runwayml.com](https://docs.dev.runwayml.com/api-details/pricing/).
+Deixe `RUNWAY_API_KEY` em branco pra continuar com a imagem estática.
+
 ## Engordando a biblioteca de faixas
 
 Pra não repetir a playlist toda hora, rode a etapa 1 periodicamente
@@ -63,6 +77,7 @@ catálogo, depois remonte a playlist (etapa 3) e reinicie a transmissão.
 |---|---|
 | ElevenLabs Music (faixas) | pago por minuto gerado — confira o preço atual no [elevenlabs.io](https://elevenlabs.io/pricing) |
 | Ideogram (fundo, uma vez por mood) | ~$0,03-0,06 |
+| Runway (fundo animado, opcional, uma vez por mood) | ~$0,25-0,50 |
 | VPS rodando a live 24/7 | ~$5-10/mês |
 
 ## Legal

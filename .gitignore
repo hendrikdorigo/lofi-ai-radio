@@ -6,6 +6,7 @@ assets/faixas/**/*.mp3
 assets/faixas/**/catalogo.json
 assets/playlists/**/*.mp3
 assets/fundo/**/*.png
+assets/fundo/**/*.mp4
 !assets/**/.gitkeep
 
 # Python
