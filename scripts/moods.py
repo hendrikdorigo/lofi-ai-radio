@@ -7,7 +7,7 @@ Adicionar um novo mood é só adicionar uma entrada no dicionário MOODS.
 
 MOODS = {
     "lofi_classical": {
-        "nome": "Lofi Clássico",
+        "nome": "Classical Lofi",
         "prompts_musica": [
             (
                 "lofi hip hop beat blended with a baroque piano theme in the style of "
@@ -35,11 +35,11 @@ MOODS = {
             "warm lamp light, rain on the window, painterly illustration, "
             "vertical 9:16 composition, no text, no watermark, no people"
         ),
-        "titulo_live": "Lofi Clássico 24/7 — Música de Estudo com IA 🎻📚",
+        "titulo_live": "Classical Lofi 24/7 🎻📚 AI-Generated Study Music Radio",
         "descricao_live": (
-            "Uma rádio contínua de lofi inspirado em música clássica, composta "
-            "inteiramente por IA — perfeita pra estudar, trabalhar ou relaxar.\n\n"
-            "#lofi #musicaclassica #studymusic #lofihiphop"
+            "A continuous lofi radio inspired by classical music, entirely "
+            "composed by AI — perfect for studying, working, or relaxing.\n\n"
+            "#lofi #classicalmusic #studymusic #lofihiphop #chillbeats"
         ),
     },
     "lofi_medieval": {
@@ -67,11 +67,11 @@ MOODS = {
             "candlelight, lute hanging on the wall, painterly illustration, "
             "vertical 9:16 composition, no text, no watermark, no people"
         ),
-        "titulo_live": "Lofi Medieval 24/7 — Taverna Relaxante com IA 🏰🔥",
+        "titulo_live": "Medieval Lofi 24/7 🏰🔥 AI-Generated Tavern Radio",
         "descricao_live": (
-            "Uma rádio contínua de lofi inspirado em música medieval, composta "
-            "inteiramente por IA — clima de taverna pra estudar, trabalhar ou "
-            "relaxar.\n\n#lofi #medieval #studymusic #tavernmusic"
+            "A continuous lofi radio inspired by medieval music, entirely "
+            "composed by AI — cozy tavern vibes for studying, working, or "
+            "relaxing.\n\n#lofi #medieval #studymusic #tavernmusic #chillbeats"
         ),
     },
     "classic_rock": {
@@ -102,11 +102,11 @@ MOODS = {
             "dramatic stage lighting, smoke haze, retro 1970s aesthetic, painterly "
             "illustration, vertical 9:16 composition, no text, no watermark, no people"
         ),
-        "titulo_live": "Classic Rock 24/7 — Rock Instrumental Gerado por IA 🎸🔥",
+        "titulo_live": "Classic Rock 24/7 🎸🔥 AI-Generated Instrumental Rock Radio",
         "descricao_live": (
-            "Uma rádio contínua de rock clássico instrumental, composta "
-            "inteiramente por IA — riffs de guitarra, bateria e groove non-stop.\n\n"
-            "#classicrock #rock #instrumental #radio24h"
+            "A continuous instrumental classic rock radio, entirely composed "
+            "by AI — guitar riffs, drums, and non-stop groove.\n\n"
+            "#classicrock #rock #instrumental #radio247"
         ),
     },
 }
