@@ -10,6 +10,7 @@ composição de terceiros — não tem risco de Content ID.
 
 ```
 01_generate_tracks.py      → gera faixas via ElevenLabs Music (lote, engorda o catálogo)
+01b_generate_faithful_tracks.py → (opcional) renderiza MIDI de domínio público fielmente, com efeito lofi
         ↓
 02_generate_background.py  → gera a imagem de fundo da live (uma vez por mood, via Ideogram)
         ↓
@@ -64,6 +65,32 @@ imagem e ele passa a tocar em loop na live. Como é só **um clipe por mood**
 (não um por cena, como no projeto de Shorts), o custo é baixo — confira o
 preço atual em [docs.dev.runwayml.com](https://docs.dev.runwayml.com/api-details/pricing/).
 Deixe `RUNWAY_API_KEY` em branco pra continuar com a imagem estática.
+
+## Faixas fiéis ao original (opcional)
+
+O ElevenLabs Music (etapa 1) só se **inspira** no estilo pedido — ele não
+reproduz uma melodia específica nota por nota (nenhum gerador texto-pra-música
+faz isso hoje). Se você quer a melodia real de uma peça (ex: o tema principal
+do Rondo Alla Turca reconhecível de verdade), use a etapa `1b`:
+
+1. Baixe arquivos `.mid` de domínio público — [mutopiaproject.org](https://www.mutopiaproject.org/)
+   é a fonte mais confiável (projeto dedicado a partituras/MIDI livres;
+   evite sites que vendem "arranjos" próprios, cuja transcrição específica
+   pode não ser livre mesmo a peça sendo de domínio público)
+2. Coloque os arquivos em `assets/midi_fonte/<mood>/*.mid`
+3. Instale o [FluidSynth](https://www.fluidsynth.org/) e baixe um soundfont
+   General MIDI gratuito (ex: FluidR3_GM.sf2), configure o caminho em
+   `SOUNDFONT_PATH` no `.env`
+4. Rode:
+   ```bash
+   python scripts/01b_generate_faithful_tracks.py --mood lofi_classical
+   ```
+
+Isso renderiza a melodia de verdade com um piano sintetizado e aplica um
+tratamento lofi por cima (corte de agudos, chiado de vinil sintetizado,
+leve wobble) — sem usar nenhuma gravação de terceiros, então continua sem
+risco de Content ID (só a composição, que é de domínio público, e uma
+renderização nova que você mesmo gera).
 
 ## Engordando a biblioteca de faixas
 
