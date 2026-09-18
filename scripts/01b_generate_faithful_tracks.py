@@ -87,12 +87,14 @@ def main():
     parser.add_argument("--mood", required=True, help="lofi_classical | lofi_medieval")
     args = parser.parse_args()
 
-    soundfont = Path(os.environ.get("SOUNDFONT_PATH", ""))
-    if not soundfont.exists():
+    soundfont_str = os.environ.get("SOUNDFONT_PATH", "").strip()
+    soundfont = Path(soundfont_str) if soundfont_str else None
+    if not soundfont or not soundfont.is_file():
         raise FileNotFoundError(
-            "SOUNDFONT_PATH não configurado ou o arquivo não existe. Baixe um "
-            "soundfont General MIDI gratuito (ex: FluidR3_GM.sf2) e aponte o "
-            "caminho em config/.env."
+            "SOUNDFONT_PATH não configurado ou não aponta pra um arquivo válido "
+            f"(valor atual: {soundfont_str!r}). Baixe um soundfont General MIDI "
+            "gratuito (ex: FluidR3_GM.sf2) e aponte o caminho completo até o "
+            "arquivo .sf2 em config/.env."
         )
 
     midi_dir = MIDI_DIR / args.mood
