@@ -67,15 +67,15 @@ def aplicar_efeito_lofi(wav_origem: Path, mp3_destino: Path):
     um chiado de vinil sintetizado por baixo — dá a textura lofi sem
     alterar a melodia em si."""
     filtro = (
-        "[0:a]lowpass=f=3500,highpass=f=80,vibrato=f=0.4:d=0.25[piano];"
-        "[1:a]volume=0.06[chiado];"
-        "[piano][chiado]amix=inputs=2:duration=first:dropout_transition=2[out]"
+        "[0:a]lowpass=f=3500,highpass=f=80,vibrato=f=0.4:d=0.08[piano];"
+        "[1:a]highpass=f=500,lowpass=f=6000,volume=0.015[chiado];"
+        "[piano][chiado]amix=inputs=2:duration=first:normalize=0[out]"
     )
     subprocess.run(
         [
             "ffmpeg", "-y",
             "-i", str(wav_origem),
-            "-f", "lavfi", "-i", "anoisesrc=color=pink:amplitude=1",
+            "-f", "lavfi", "-i", "anoisesrc=color=pink:amplitude=1:sample_rate=44100",
             "-filter_complex", filtro,
             "-map", "[out]",
             "-c:a", "libmp3lame", "-q:a", "2",
