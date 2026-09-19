@@ -129,11 +129,15 @@ def aplicar_efeito_lofi(wav_origem: Path, mp3_destino: Path, batida_loop: Path):
         "acompressor=threshold=-18dB:ratio=3:attack=20:release=250[piano];"
         "[1:a]highpass=f=800,lowpass=f=7000,volume=0.03,tremolo=f=3:d=0.5[chiado];"
         "[2:a]volume=0.35[batida];"
-        # dither inaudível: o loop de bateria tem trechos de silêncio digital
-        # puro entre as batidas, e isso trava o libmp3lame (bug conhecido do
-        # encoder com blocos de zero absoluto) mesmo em bitrate fixo
-        "[3:a]volume=0.0004[dither];"
-        "[piano][chiado][batida][dither]amix=inputs=4:duration=first:normalize=0[out]"
+        # dither inaudível: evita blocos de silêncio digital absoluto (entre
+        # as batidas do loop de bateria) e valores "quase zero" (denormais)
+        # que os filtros de chorus/vibrato podem gerar — ambos travam o
+        # libmp3lame com "Assertion failed: el >= 0" mesmo em bitrate fixo.
+        # Converter pra PCM inteiro (s16) antes de codificar elimina de vez
+        # o problema de denormal de ponto flutuante.
+        "[3:a]volume=0.003[dither];"
+        "[piano][chiado][batida][dither]amix=inputs=4:duration=first:normalize=0,"
+        "aformat=sample_fmts=s16:sample_rates=44100[out]"
     )
     subprocess.run(
         [
