@@ -50,10 +50,13 @@ def duracao_audio(path: Path) -> float:
 
 
 def renderizar_midi(midi_path: Path, soundfont: Path, wav_destino: Path):
+    # As opções (-F, -r) precisam vir antes dos argumentos posicionais
+    # (soundfont, midi) — o fluidsynth rejeita opções depois deles.
     subprocess.run(
         [
-            "fluidsynth", "-ni", str(soundfont), str(midi_path),
+            "fluidsynth", "-ni",
             "-F", str(wav_destino), "-r", "44100",
+            str(soundfont), str(midi_path),
         ],
         check=True,
     )
