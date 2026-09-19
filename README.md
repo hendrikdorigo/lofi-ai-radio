@@ -86,11 +86,16 @@ do Rondo Alla Turca reconhecível de verdade), use a etapa `1b`:
    python scripts/01b_generate_faithful_tracks.py --mood lofi_classical
    ```
 
-Isso renderiza a melodia de verdade com um piano sintetizado e aplica um
-tratamento lofi por cima (corte de agudos, chiado de vinil sintetizado,
-leve wobble) — sem usar nenhuma gravação de terceiros, então continua sem
-risco de Content ID (só a composição, que é de domínio público, e uma
-renderização nova que você mesmo gera).
+Isso renderiza a melodia de verdade com um piano sintetizado, sem nenhum
+efeito por cima (testamos tratamento lofi — chiado, batida sintetizada,
+wow/flutter — e não convenceu; melodia clássica limpa soou melhor). Sem
+usar nenhuma gravação de terceiros, então continua sem risco de Content ID
+(só a composição, que é de domínio público, e uma renderização nova que
+você mesmo gera).
+
+**Essa é a via recomendada pro mood `lofi_classical`** — apesar do nome da
+pasta ter ficado "lofi" por herança, o conteúdo real que toca é a peça
+clássica de verdade (etapa 1b), não uma reinterpretação lofi (etapa 1).
 
 ## Engordando a biblioteca de faixas
 

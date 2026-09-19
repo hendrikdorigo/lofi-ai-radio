@@ -7,7 +7,7 @@ Adicionar um novo mood é só adicionar uma entrada no dicionário MOODS.
 
 MOODS = {
     "lofi_classical": {
-        "nome": "Classical Lofi",
+        "nome": "Classical Music",
         "prompts_musica": [
             (
                 "lofi hip hop beat blended with a baroque piano theme in the style of "
@@ -35,11 +35,11 @@ MOODS = {
             "warm lamp light, rain on the window, painterly illustration, "
             "vertical 9:16 composition, no text, no watermark, no people"
         ),
-        "titulo_live": "Classical Lofi 24/7 🎻📚 AI-Generated Study Music Radio",
+        "titulo_live": "Classical Music 24/7 🎻📚 Study & Focus Radio",
         "descricao_live": (
-            "A continuous lofi radio inspired by classical music, entirely "
-            "composed by AI — perfect for studying, working, or relaxing.\n\n"
-            "#lofi #classicalmusic #studymusic #lofihiphop #chillbeats"
+            "A continuous radio of classical piano pieces (public domain "
+            "performances) — perfect for studying, working, or relaxing.\n\n"
+            "#classicalmusic #studymusic #piano #radio247"
         ),
     },
     "lofi_medieval": {

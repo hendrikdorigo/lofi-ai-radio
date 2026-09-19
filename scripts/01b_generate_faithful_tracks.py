@@ -1,12 +1,10 @@
 """
 Etapa 1b (opcional) — Gera faixas 100% fiéis a uma peça de domínio público,
-a partir de arquivos MIDI (você fornece), renderizados com um soundfont e
-com efeito lofi aplicado por cima (corte de agudos, chiado de vinil, leve
-"wobble" de fita).
+a partir de arquivos MIDI (você fornece), renderizados com um soundfont.
+Sem nenhum efeito por cima — é a peça clássica de verdade, tocando limpa.
 
 Diferente da etapa 1 (ElevenLabs Music, que só "se inspira" no estilo), essa
-etapa reproduz a melodia de verdade, nota por nota — útil se você quer
-fidelidade total à peça original em vez de uma reinterpretação livre da IA.
+etapa reproduz a melodia real, nota por nota.
 
 Onde conseguir os .mid (domínio público): mutopiaproject.org é o mais
 confiável — é um projeto dedicado especificamente a partituras/MIDI livres.
@@ -16,8 +14,8 @@ público) e coloque em assets/midi_fonte/<mood>/*.mid
 
 Requer:
 - fluidsynth instalado no sistema
-  (Windows: choco install fluidsynth  |  Mac: brew install fluid-synth
-   |  Linux: sudo apt install fluidsynth)
+  (Windows: baixe em github.com/FluidSynth/fluidsynth/releases
+   |  Mac: brew install fluid-synth  |  Linux: sudo apt install fluidsynth)
 - um soundfont General MIDI gratuito, ex. FluidR3_GM.sf2 — baixe e aponte
   o caminho em SOUNDFONT_PATH no config/.env
 
@@ -62,94 +60,14 @@ def renderizar_midi(midi_path: Path, soundfont: Path, wav_destino: Path):
     )
 
 
-def gerar_batida_loop(destino: Path, bpm: int = 85):
-    """Sintetiza um compasso de batida lofi (kick, snare, hi-hat) só com
-    geradores do ffmpeg — sem sample de ninguém. Salva um loop curto que
-    depois é repetido (-stream_loop) pra cobrir a faixa inteira."""
-    beat_s = 60.0 / bpm
-    loop_s = beat_s * 4  # 1 compasso de 4 tempos
-
-    eventos = [
-        ("kick", 0.0), ("kick", 2 * beat_s),
-        ("snare", beat_s), ("snare", 3 * beat_s),
-        *[("hihat", i * beat_s / 2) for i in range(8)],
-    ]
-
-    inputs = []
-    filtros = []
-    labels = []
-    for i, (tipo, t) in enumerate(eventos):
-        delay_ms = int(t * 1000)
-        if tipo == "kick":
-            inputs += ["-f", "lavfi", "-i", "sine=frequency=55:duration=0.25"]
-            proc = (
-                f"[{i}:a]lowpass=f=180,afade=t=out:st=0:d=0.25,"
-                f"volume=1.0,adelay={delay_ms}[e{i}]"
-            )
-        elif tipo == "snare":
-            inputs += ["-f", "lavfi", "-i", "anoisesrc=color=white:duration=0.15"]
-            proc = (
-                f"[{i}:a]bandpass=f=1200:width_type=h:w=1500,"
-                f"afade=t=out:st=0:d=0.15,volume=0.5,adelay={delay_ms}[e{i}]"
-            )
-        else:  # hihat
-            inputs += ["-f", "lavfi", "-i", "anoisesrc=color=white:duration=0.05"]
-            proc = (
-                f"[{i}:a]highpass=f=7000,afade=t=out:st=0:d=0.05,"
-                f"volume=0.25,adelay={delay_ms}[e{i}]"
-            )
-        filtros.append(proc)
-        labels.append(f"[e{i}]")
-
-    mix = "".join(labels) + f"amix=inputs={len(labels)}:duration=longest:normalize=0[batida]"
-    filtro_completo = ";".join(filtros) + ";" + mix
-
-    subprocess.run(
-        [
-            "ffmpeg", "-y", *inputs,
-            "-filter_complex", filtro_completo,
-            "-map", "[batida]", "-t", str(loop_s),
-            "-ar", "44100",
-            str(destino),
-        ],
-        check=True,
-    )
-
-
-def aplicar_efeito_lofi(wav_origem: Path, mp3_destino: Path, batida_loop: Path):
-    """Corta agudos/graves extremos, adiciona wow/flutter de fita (duas
-    camadas: oscilação lenta + rápida), chorus sutil pra dar corpo/calor,
-    leve compressão, mixa um chiado de vinil com variação orgânica
-    (tremolo), e uma batida lofi discreta por baixo — dá a textura lofi
-    sem alterar a melodia."""
-    filtro = (
-        "[0:a]lowpass=f=3500,highpass=f=80,"
-        "vibrato=f=0.2:d=0.12,vibrato=f=6:d=0.03,"
-        "chorus=0.6:0.9:50:0.4:0.25:2,"
-        "acompressor=threshold=-18dB:ratio=3:attack=20:release=250[piano];"
-        "[1:a]highpass=f=800,lowpass=f=7000,volume=0.03,tremolo=f=3:d=0.5[chiado];"
-        "[2:a]volume=0.35[batida];"
-        # dither inaudível: evita blocos de silêncio digital absoluto (entre
-        # as batidas do loop de bateria) e valores "quase zero" (denormais)
-        # que os filtros de chorus/vibrato podem gerar — ambos travam o
-        # libmp3lame com "Assertion failed: el >= 0" mesmo em bitrate fixo.
-        # Converter pra PCM inteiro (s16) antes de codificar elimina de vez
-        # o problema de denormal de ponto flutuante.
-        "[3:a]volume=0.003[dither];"
-        "[piano][chiado][batida][dither]amix=inputs=4:duration=first:normalize=0,"
-        "aformat=sample_fmts=s16:sample_rates=44100[out]"
-    )
+def converter_para_mp3(wav_origem: Path, mp3_destino: Path):
+    """Converte pra mp3 com normalização de volume (pra todas as faixas
+    ficarem num nível parecido na live), sem nenhum efeito de estilo."""
     subprocess.run(
         [
             "ffmpeg", "-y",
             "-i", str(wav_origem),
-            "-f", "lavfi", "-i", "anoisesrc=color=pink:amplitude=1:sample_rate=44100",
-            "-stream_loop", "-1", "-i", str(batida_loop),
-            "-f", "lavfi", "-i", "anoisesrc=color=white:amplitude=1:sample_rate=44100",
-            "-filter_complex", filtro,
-            "-map", "[out]",
-            # bitrate fixo em vez de -q:a (VBR): o modo VBR do libmp3lame trava
-            # com "Assertion failed: el >= 0" em trechos de silêncio digital
+            "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
             "-c:a", "libmp3lame", "-b:a", "192k",
             str(mp3_destino),
         ],
@@ -188,9 +106,6 @@ def main():
     )
     proximo_indice = len(catalogo) + 1
 
-    batida_loop = out_dir / "_batida_loop.wav"
-    gerar_batida_loop(batida_loop)
-
     for i, midi_path in enumerate(midis):
         indice = proximo_indice + i
         wav_tmp = out_dir / f"_tmp_{indice}.wav"
@@ -198,7 +113,7 @@ def main():
 
         print(f"Renderizando {midi_path.name}...")
         renderizar_midi(midi_path, soundfont, wav_tmp)
-        aplicar_efeito_lofi(wav_tmp, destino, batida_loop)
+        converter_para_mp3(wav_tmp, destino)
         wav_tmp.unlink()
 
         dur = duracao_audio(destino)
@@ -211,7 +126,6 @@ def main():
         )
         print(f"Faixa {indice} salva: {destino} ({dur:.1f}s)")
 
-    batida_loop.unlink()
     catalogo_path.write_text(json.dumps(catalogo, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\nCatálogo atualizado: {len(catalogo)} faixas em {catalogo_path}")
 
