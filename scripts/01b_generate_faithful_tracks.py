@@ -63,12 +63,16 @@ def renderizar_midi(midi_path: Path, soundfont: Path, wav_destino: Path):
 
 
 def aplicar_efeito_lofi(wav_origem: Path, mp3_destino: Path):
-    """Corta agudos/graves extremos, adiciona leve wobble de fita e mixa
-    um chiado de vinil sintetizado por baixo — dá a textura lofi sem
-    alterar a melodia em si."""
+    """Corta agudos/graves extremos, adiciona wow/flutter de fita (duas
+    camadas: oscilação lenta + rápida), chorus sutil pra dar corpo/calor,
+    leve compressão, e mixa um chiado de vinil com variação orgânica
+    (tremolo) por baixo — dá a textura lofi sem alterar a melodia."""
     filtro = (
-        "[0:a]lowpass=f=3500,highpass=f=80,vibrato=f=0.4:d=0.08[piano];"
-        "[1:a]highpass=f=500,lowpass=f=6000,volume=0.015[chiado];"
+        "[0:a]lowpass=f=3500,highpass=f=80,"
+        "vibrato=f=0.2:d=0.12,vibrato=f=6:d=0.03,"
+        "chorus=0.6:0.9:50:0.4:0.25:2,"
+        "acompressor=threshold=-18dB:ratio=3:attack=20:release=250[piano];"
+        "[1:a]highpass=f=800,lowpass=f=7000,volume=0.03,tremolo=f=3:d=0.5[chiado];"
         "[piano][chiado]amix=inputs=2:duration=first:normalize=0[out]"
     )
     subprocess.run(
