@@ -129,7 +129,11 @@ def aplicar_efeito_lofi(wav_origem: Path, mp3_destino: Path, batida_loop: Path):
         "acompressor=threshold=-18dB:ratio=3:attack=20:release=250[piano];"
         "[1:a]highpass=f=800,lowpass=f=7000,volume=0.03,tremolo=f=3:d=0.5[chiado];"
         "[2:a]volume=0.35[batida];"
-        "[piano][chiado][batida]amix=inputs=3:duration=first:normalize=0[out]"
+        # dither inaudível: o loop de bateria tem trechos de silêncio digital
+        # puro entre as batidas, e isso trava o libmp3lame (bug conhecido do
+        # encoder com blocos de zero absoluto) mesmo em bitrate fixo
+        "[3:a]volume=0.0004[dither];"
+        "[piano][chiado][batida][dither]amix=inputs=4:duration=first:normalize=0[out]"
     )
     subprocess.run(
         [
@@ -137,6 +141,7 @@ def aplicar_efeito_lofi(wav_origem: Path, mp3_destino: Path, batida_loop: Path):
             "-i", str(wav_origem),
             "-f", "lavfi", "-i", "anoisesrc=color=pink:amplitude=1:sample_rate=44100",
             "-stream_loop", "-1", "-i", str(batida_loop),
+            "-f", "lavfi", "-i", "anoisesrc=color=white:amplitude=1:sample_rate=44100",
             "-filter_complex", filtro,
             "-map", "[out]",
             # bitrate fixo em vez de -q:a (VBR): o modo VBR do libmp3lame trava
