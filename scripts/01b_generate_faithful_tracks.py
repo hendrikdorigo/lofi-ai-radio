@@ -78,7 +78,9 @@ def aplicar_efeito_lofi(wav_origem: Path, mp3_destino: Path):
             "-f", "lavfi", "-i", "anoisesrc=color=pink:amplitude=1:sample_rate=44100",
             "-filter_complex", filtro,
             "-map", "[out]",
-            "-c:a", "libmp3lame", "-q:a", "2",
+            # bitrate fixo em vez de -q:a (VBR): o modo VBR do libmp3lame trava
+            # com "Assertion failed: el >= 0" em trechos de silêncio digital
+            "-c:a", "libmp3lame", "-b:a", "192k",
             str(mp3_destino),
         ],
         check=True,
