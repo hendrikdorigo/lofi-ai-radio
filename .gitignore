@@ -8,6 +8,11 @@ assets/playlists/**/*.mp3
 assets/fundo/**/*.png
 assets/fundo/**/*.mp4
 assets/midi_fonte/**/*.mid
+assets/gravacoes_fonte/**/*.mp3
+assets/gravacoes_fonte/**/*.flac
+assets/gravacoes_fonte/**/*.wav
+assets/gravacoes_fonte/**/*.ogg
+assets/gravacoes_fonte/**/*.m4a
 !assets/**/.gitkeep
 
 # Python

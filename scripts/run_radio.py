@@ -1,9 +1,11 @@
 """
-Orquestrador — prepara tudo (faixas, fundo, playlist) e começa a
-transmissão pra um mood.
+Orquestrador — prepara tudo (fundo, playlist) e começa a transmissão pra
+um mood. As faixas em si (gravações reais ou MIDI) não são automatizáveis
+aqui — você baixa manualmente e importa com a etapa 1c (ou 1b de fallback)
+antes de rodar isso; veja o README.
 
 Uso:
-    python run_radio.py --mood classical --faixas-iniciais 15
+    python run_radio.py --mood classical            # catálogo já importado
     python run_radio.py --mood classical --pular-preparo   # já preparado, só transmite
 """
 import argparse
@@ -26,19 +28,20 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mood", required=True, help="classical | lofi_medieval")
     parser.add_argument(
-        "--faixas-iniciais", type=int, default=15,
-        help="Quantas faixas gerar antes de montar a playlist (se ainda não tiver catálogo)",
-    )
-    parser.add_argument(
         "--pular-preparo", action="store_true",
-        help="Pula geração de faixas/fundo/playlist — usa o que já existe e só transmite",
+        help="Pula geração de fundo/playlist — usa o que já existe e só transmite",
     )
     args = parser.parse_args()
 
     if not args.pular_preparo:
         catalogo = Path(__file__).parent.parent / "assets" / "faixas" / args.mood / "catalogo.json"
         if not catalogo.exists():
-            rodar("01_generate_tracks.py", "--mood", args.mood, "--quantidade", str(args.faixas_iniciais))
+            raise FileNotFoundError(
+                f"Catálogo não encontrado em {catalogo}. Baixe gravações reais (ex: "
+                "musopen.org) pra assets/gravacoes_fonte/<mood>/ e rode "
+                "scripts/01c_import_real_recordings.py primeiro (ou 01b como fallback "
+                "com MIDI) — veja o README."
+            )
 
         fundo = Path(__file__).parent.parent / "assets" / "fundo" / f"{args.mood}.png"
         fundo_animado = Path(__file__).parent.parent / "assets" / "fundo" / f"{args.mood}.mp4"

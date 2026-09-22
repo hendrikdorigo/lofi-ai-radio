@@ -22,10 +22,13 @@ apt-get update -qq
 apt-get install -y --no-install-recommends \
     python3 python3-venv python3-pip ffmpeg fluidsynth ca-certificates curl
 
+# fluidsynth só é usado pela etapa 1b (fallback opcional, MIDI sintetizado
+# pra peças que você não achar como gravação real). A via principal (1c,
+# gravações reais) só precisa do ffmpeg acima.
 SOUNDFONT_PATH="$APP_DIR/assets/soundfont/FluidR3_GM.sf2"
 mkdir -p "$APP_DIR/assets/soundfont"
-echo "==> Soundfont: baixe manualmente um GM (.sf2) de uma fonte confiável"
-echo "    (ex: a mesma que você já usou no Windows) e suba pra:"
+echo "==> (Opcional) Soundfont pra etapa 1b: se for usar, baixe manualmente um"
+echo "    GM (.sf2) de uma fonte confiável e suba pra:"
 echo "    $SOUNDFONT_PATH"
 echo "    (ex: scp FluidR3_GM.sf2 root@SEU_IP:$SOUNDFONT_PATH)"
 
@@ -61,13 +64,15 @@ cat <<'EOF'
      - IDEOGRAM_API_KEY   (pra gerar o fundo, uma vez)
    O SOUNDFONT_PATH já foi preenchido automaticamente.
 
-2. Coloque seus arquivos .mid em:
-     /opt/lofi-ai-radio/assets/midi_fonte/classical/*.mid
-   (baixe em mutopiaproject.org)
+2. Coloque suas gravações reais (baixadas de musopen.org, licença Public
+   Domain ou CC0) em:
+     /opt/lofi-ai-radio/assets/gravacoes_fonte/classical/*.mp3
+   (fallback opcional: .mid de mutopiaproject.org em
+   assets/midi_fonte/classical/, se não achar gravação real de alguma peça)
 
 3. Rode a preparação inicial (gera fundo + playlist), uma vez:
      sudo -u lofiradio /opt/lofi-ai-radio/.venv/bin/python \
-       /opt/lofi-ai-radio/scripts/01b_generate_faithful_tracks.py --mood classical
+       /opt/lofi-ai-radio/scripts/01c_import_real_recordings.py --mood classical
      sudo -u lofiradio /opt/lofi-ai-radio/.venv/bin/python \
        /opt/lofi-ai-radio/scripts/02_generate_background.py --mood classical
      sudo -u lofiradio /opt/lofi-ai-radio/.venv/bin/python \
@@ -82,5 +87,6 @@ cat <<'EOF'
 
 Dali em diante ela reinicia sozinha (queda de rede, reboot da VPS, etc.) e o
 timer semanal (lofi-radio-refresh.timer) reconstrói a playlist com qualquer
-.mid novo que você jogar em assets/midi_fonte/classical/ via scp.
+gravação ou .mid novo que você jogar em assets/gravacoes_fonte/classical/ ou
+assets/midi_fonte/classical/ via scp.
 EOF
