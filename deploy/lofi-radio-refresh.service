@@ -1,0 +1,8 @@
+[Unit]
+Description=Lofi AI Radio - reconstroi playlist com .mid novos e reinicia a live
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/lofi-ai-radio/deploy/refresh_playlist.sh

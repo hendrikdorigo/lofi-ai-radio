@@ -1,0 +1,19 @@
+[Unit]
+Description=Lofi AI Radio - transmissao 24/7 pro YouTube Live
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lofiradio
+Group=lofiradio
+WorkingDirectory=/opt/lofi-ai-radio/scripts
+ExecStart=/opt/lofi-ai-radio/.venv/bin/python /opt/lofi-ai-radio/scripts/04_transmitir_live.py --mood lofi_classical
+Restart=always
+RestartSec=10
+# ffmpeg as vezes trava numa reconexao de rede em vez de cair sozinho;
+# forca kill depois de um tempo se nao responder a SIGTERM.
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

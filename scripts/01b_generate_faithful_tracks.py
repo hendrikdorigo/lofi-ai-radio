@@ -91,8 +91,8 @@ def main():
         )
 
     midi_dir = MIDI_DIR / args.mood
-    midis = sorted(midi_dir.glob("*.mid"))
-    if not midis:
+    todos_midis = sorted(midi_dir.glob("*.mid"))
+    if not todos_midis:
         raise FileNotFoundError(
             f"Nenhum .mid encontrado em {midi_dir}. Baixe arquivos MIDI de "
             f"domínio público (ex: mutopiaproject.org) e coloque nessa pasta."
@@ -104,6 +104,19 @@ def main():
     catalogo = (
         json.loads(catalogo_path.read_text(encoding="utf-8")) if catalogo_path.exists() else []
     )
+
+    # Já processado = tem entrada no catálogo citando esse nome de arquivo MIDI
+    # (via o campo "prompt"). Evita duplicar faixa ao rodar de novo (ex: no
+    # timer semanal) sobre uma pasta com .mid que já foram renderizados antes.
+    ja_processados = {item["prompt"] for item in catalogo}
+    midis = [
+        m for m in todos_midis
+        if f"faithful rendition of {m.stem} (public domain MIDI)" not in ja_processados
+    ]
+    if not midis:
+        print("Nenhum .mid novo pra processar (todos já estão no catálogo).")
+        return
+
     proximo_indice = len(catalogo) + 1
 
     for i, midi_path in enumerate(midis):

@@ -30,6 +30,51 @@ para assim que o processo do ffmpeg é interrompido. Use uma VPS barata
 (~$5-10/mês) com Python, ffmpeg e este repositório, rodando o
 `04_transmitir_live.py` como serviço systemd ou via `nohup ... &`.
 
+Pra isso praticamente sem manutenção manual, veja a seção
+[Deploy automatizado numa VPS](#deploy-automatizado-numa-vps) abaixo.
+
+## Deploy automatizado numa VPS
+
+Deixa a live rodando sozinha 24/7, reconectando se cair, e reconstruindo a
+playlist semanalmente com qualquer `.mid` novo que você subir — sem precisar
+ficar rodando comandos manualmente.
+
+1. Suba uma VPS Ubuntu/Debian (Hetzner CX22 ou DigitalOcean Basic, ~$5-6/mês).
+2. Clone o repositório nela e rode o script de provisionamento:
+   ```bash
+   ssh root@SEU_IP
+   git clone https://github.com/hendrikdorigo/lofi-ai-radio.git /opt/lofi-ai-radio
+   cd /opt/lofi-ai-radio
+   bash deploy/setup_vps.sh
+   ```
+   Isso instala ffmpeg/fluidsynth/python, cria um usuário sem privilégios
+   (`lofiradio`) pra rodar o serviço, monta o venv, instala os serviços
+   systemd e imprime os próximos passos manuais (preencher `.env`, subir os
+   `.mid`, gerar fundo/playlist pela primeira vez).
+3. Depois de seguir os passos impressos pelo script, suba a live:
+   ```bash
+   systemctl enable --now lofi-radio.service
+   journalctl -u lofi-radio.service -f   # acompanhar os logs
+   ```
+
+O que fica automático a partir daí:
+
+- **`lofi-radio.service`** — roda `04_transmitir_live.py` com
+  `Restart=always`. Se a live cair (queda de rede, reboot da VPS), ela volta
+  sozinha em segundos.
+- **`lofi-radio-refresh.timer`** — toda segunda de madrugada, roda
+  `deploy/refresh_playlist.sh`: renderiza qualquer `.mid` novo em
+  `assets/midi_fonte/lofi_classical/` (a etapa 1b agora pula os que já foram
+  processados, então rodar sem novidade não faz nada), remonta a playlist e
+  reinicia a live pra pegar as faixas novas.
+
+Sua única tarefa manual recorrente, se quiser variar o catálogo, é baixar
+mais `.mid` do Mutopia e subir pra VPS:
+```bash
+scp minha_peca.mid root@SEU_IP:/opt/lofi-ai-radio/assets/midi_fonte/lofi_classical/
+```
+Se você nunca fizer isso, a live continua no ar em loop com o catálogo atual.
+
 ## Como rodar
 
 ```bash
