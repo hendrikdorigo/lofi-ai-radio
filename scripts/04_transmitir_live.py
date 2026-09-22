@@ -2,11 +2,11 @@
 Etapa 4 — Transmite a playlist em loop contínuo pro YouTube Live via RTMP.
 
 Precisa rodar num servidor ligado 24/7 (não no seu PC) — ex: `nohup python
-04_transmitir_live.py --mood lofi_classical &` numa VPS, ou como serviço
+04_transmitir_live.py --mood classical &` numa VPS, ou como serviço
 systemd. Roda pra sempre até você interromper (Ctrl+C ou matar o processo).
 
 Uso:
-    python 04_transmitir_live.py --mood lofi_classical
+    python 04_transmitir_live.py --mood classical
 """
 import argparse
 import os
@@ -88,7 +88,7 @@ def transmitir(fundo: Path, playlist: Path, titulo: str, stream_key: str):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mood", required=True, help="lofi_classical | lofi_medieval")
+    parser.add_argument("--mood", required=True, help="classical | lofi_medieval")
     args = parser.parse_args()
 
     mood = obter_mood(args.mood)

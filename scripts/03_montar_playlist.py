@@ -7,8 +7,8 @@ rodar de novo a qualquer momento pra gerar uma playlist nova (ex: depois
 de acrescentar mais faixas com a etapa 1).
 
 Uso:
-    python 03_montar_playlist.py --mood lofi_classical
-    python 03_montar_playlist.py --mood lofi_classical --duracao-min 30
+    python 03_montar_playlist.py --mood classical
+    python 03_montar_playlist.py --mood classical --duracao-min 30
 """
 import argparse
 import json
@@ -58,7 +58,7 @@ def montar_playlist(faixas: list[Path], destino: Path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mood", required=True, help="lofi_classical | lofi_medieval")
+    parser.add_argument("--mood", required=True, help="classical | lofi_medieval")
     parser.add_argument(
         "--duracao-min", type=int, default=None,
         help="Duração alvo em minutos (usa faixas suficientes do catálogo pra cobrir isso; "

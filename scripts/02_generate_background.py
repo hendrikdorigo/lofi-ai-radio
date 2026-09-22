@@ -6,7 +6,7 @@ de novo se quiser trocar o visual — o arquivo gerado fica salvo e é
 reaproveitado por todas as sessões de transmissão.
 
 Uso:
-    python 02_generate_background.py --mood lofi_classical
+    python 02_generate_background.py --mood classical
 """
 import argparse
 import os
@@ -45,7 +45,7 @@ def gerar_fundo_ideogram(prompt: str, destino: Path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mood", required=True, help="lofi_classical | lofi_medieval")
+    parser.add_argument("--mood", required=True, help="classical | lofi_medieval")
     args = parser.parse_args()
 
     mood = obter_mood(args.mood)

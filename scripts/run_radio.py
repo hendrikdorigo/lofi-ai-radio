@@ -3,8 +3,8 @@ Orquestrador — prepara tudo (faixas, fundo, playlist) e começa a
 transmissão pra um mood.
 
 Uso:
-    python run_radio.py --mood lofi_classical --faixas-iniciais 15
-    python run_radio.py --mood lofi_classical --pular-preparo   # já preparado, só transmite
+    python run_radio.py --mood classical --faixas-iniciais 15
+    python run_radio.py --mood classical --pular-preparo   # já preparado, só transmite
 """
 import argparse
 import subprocess
@@ -24,7 +24,7 @@ def rodar(script: str, *args: str):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mood", required=True, help="lofi_classical | lofi_medieval")
+    parser.add_argument("--mood", required=True, help="classical | lofi_medieval")
     parser.add_argument(
         "--faixas-iniciais", type=int, default=15,
         help="Quantas faixas gerar antes de montar a playlist (se ainda não tiver catálogo)",

@@ -1,6 +1,6 @@
 """
 Etapa 1 — Gera um lote de faixas de música via ElevenLabs Music API,
-seguindo os prompts do mood escolhido (lofi_classical, lofi_medieval, ...).
+seguindo os prompts do mood escolhido (classical, lofi_medieval, ...).
 
 As faixas ficam em assets/faixas/<mood>/faixa_NNN.mp3, com um catálogo
 (assets/faixas/<mood>/catalogo.json) guardando duração e prompt de cada uma
@@ -11,7 +11,7 @@ existente (não sobrescreve as antigas), então dá pra ir engordando a
 biblioteca aos poucos.
 
 Uso:
-    python 01_generate_tracks.py --mood lofi_classical --quantidade 10
+    python 01_generate_tracks.py --mood classical --quantidade 10
 """
 import argparse
 import json
@@ -64,7 +64,7 @@ def gerar_faixa(prompt: str, destino: Path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mood", required=True, help="lofi_classical | lofi_medieval")
+    parser.add_argument("--mood", required=True, help="classical | lofi_medieval")
     parser.add_argument("--quantidade", type=int, default=5, help="Quantas faixas gerar")
     args = parser.parse_args()
 

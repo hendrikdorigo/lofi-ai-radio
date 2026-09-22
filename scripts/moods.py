@@ -6,28 +6,27 @@ Adicionar um novo mood é só adicionar uma entrada no dicionário MOODS.
 """
 
 MOODS = {
-    "lofi_classical": {
+    "classical": {
         "nome": "Classical Music",
+        # Só usado pela etapa 1 (ElevenLabs Music, opcional/alternativa) — a
+        # via recomendada é a 1b, que renderiza a peça real a partir de MIDI,
+        # sem nenhum estilo "lofi" em cima (testamos e não ficou bom).
         "prompts_musica": [
             (
-                "lofi hip hop beat blended with a baroque piano theme in the style of "
-                "Bach, mellow, warm vinyl crackle, soft drums, relaxing study music, "
-                "no vocals"
+                "solo piano performance of a baroque theme in the style of Bach, "
+                "clean and expressive, natural studio recording, no vocals"
             ),
             (
-                "lofi chillhop with a romantic-era string melody inspired by Chopin, "
-                "gentle piano, dusty vinyl texture, slow tempo, calm and melancholic, "
-                "no vocals"
+                "solo piano performance of a romantic-era melody inspired by Chopin, "
+                "gentle and expressive, natural studio recording, no vocals"
             ),
             (
-                "lofi beat with a classical string quartet motif in the style of "
-                "Vivaldi, soft jazzy chords, tape hiss, cozy late-night study "
-                "atmosphere, no vocals"
+                "classical string quartet performance in the style of Vivaldi, "
+                "warm and precise, natural studio recording, no vocals"
             ),
             (
-                "lofi hip hop with a delicate classical flute and harp melody, "
-                "warm analog texture, slow relaxed drums, dreamy and nostalgic, "
-                "no vocals"
+                "classical flute and harp duet, delicate and clean, natural studio "
+                "recording, no vocals"
             ),
         ],
         "prompt_fundo": (

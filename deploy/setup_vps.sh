@@ -62,16 +62,16 @@ cat <<'EOF'
    O SOUNDFONT_PATH já foi preenchido automaticamente.
 
 2. Coloque seus arquivos .mid em:
-     /opt/lofi-ai-radio/assets/midi_fonte/lofi_classical/*.mid
+     /opt/lofi-ai-radio/assets/midi_fonte/classical/*.mid
    (baixe em mutopiaproject.org)
 
 3. Rode a preparação inicial (gera fundo + playlist), uma vez:
      sudo -u lofiradio /opt/lofi-ai-radio/.venv/bin/python \
-       /opt/lofi-ai-radio/scripts/01b_generate_faithful_tracks.py --mood lofi_classical
+       /opt/lofi-ai-radio/scripts/01b_generate_faithful_tracks.py --mood classical
      sudo -u lofiradio /opt/lofi-ai-radio/.venv/bin/python \
-       /opt/lofi-ai-radio/scripts/02_generate_background.py --mood lofi_classical
+       /opt/lofi-ai-radio/scripts/02_generate_background.py --mood classical
      sudo -u lofiradio /opt/lofi-ai-radio/.venv/bin/python \
-       /opt/lofi-ai-radio/scripts/03_montar_playlist.py --mood lofi_classical
+       /opt/lofi-ai-radio/scripts/03_montar_playlist.py --mood classical
 
 4. Suba a live:
      systemctl enable --now lofi-radio.service
@@ -82,5 +82,5 @@ cat <<'EOF'
 
 Dali em diante ela reinicia sozinha (queda de rede, reboot da VPS, etc.) e o
 timer semanal (lofi-radio-refresh.timer) reconstrói a playlist com qualquer
-.mid novo que você jogar em assets/midi_fonte/lofi_classical/ via scp.
+.mid novo que você jogar em assets/midi_fonte/classical/ via scp.
 EOF

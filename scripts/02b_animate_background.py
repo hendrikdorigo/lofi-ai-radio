@@ -12,7 +12,7 @@ vídeo gerado. Aqui o custo é baixo porque só gera UM clipe por mood (não um
 por cena) — confira o preço atual em docs.dev.runwayml.com antes de rodar.
 
 Uso:
-    python 02b_animate_background.py --mood lofi_classical
+    python 02b_animate_background.py --mood classical
 """
 import argparse
 import base64
@@ -91,7 +91,7 @@ def _aguardar_tarefa(task_id: str, timeout_s: int = 300) -> str:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mood", required=True, help="lofi_classical | lofi_medieval")
+    parser.add_argument("--mood", required=True, help="classical | lofi_medieval")
     parser.add_argument(
         "--duracao", type=int, default=8,
         help="Duração alvo do loop em segundos (Runway arredonda pra 5 ou 10)",

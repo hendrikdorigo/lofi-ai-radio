@@ -20,7 +20,7 @@ Requer:
   o caminho em SOUNDFONT_PATH no config/.env
 
 Uso:
-    python 01b_generate_faithful_tracks.py --mood lofi_classical
+    python 01b_generate_faithful_tracks.py --mood classical
 """
 import argparse
 import json
@@ -77,7 +77,7 @@ def converter_para_mp3(wav_origem: Path, mp3_destino: Path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mood", required=True, help="lofi_classical | lofi_medieval")
+    parser.add_argument("--mood", required=True, help="classical | lofi_medieval")
     args = parser.parse_args()
 
     soundfont_str = os.environ.get("SOUNDFONT_PATH", "").strip()

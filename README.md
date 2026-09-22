@@ -1,16 +1,19 @@
-# Lofi AI Radio — Live 24/7 no YouTube
+# Classical Radio — Live 24/7 no YouTube
 
-Pipeline pra rodar uma live contínua de música lofi composta 100% por IA,
-em dois "moods" (estilos): **Lofi Clássico** (temas inspirados em Bach,
-Chopin, Vivaldi...) e **Lofi Medieval** (taverna, alaúde, harpa). Como a
-música é inteiramente gerada por IA — não usa nenhuma gravação ou
-composição de terceiros — não tem risco de Content ID.
+Pipeline pra rodar uma live contínua com peças clássicas de domínio público
+(Bach, Chopin, Vivaldi...) tocando limpas, sem nenhum estilo lofi por cima
+— testamos chiado/batida/wow-flutter e não ficou bom, então a via
+recomendada (etapa `1b`) é a peça de verdade, renderizada fielmente a partir
+de MIDI, sem tratamento nenhum. Como não usa gravação de terceiros — só a
+composição (de domínio público) e uma renderização nova gerada por você —
+não tem risco de Content ID. O repo também tem moods extras não usados no
+canal principal (medieval, rock) caso queira expandir depois.
 
 ## Arquitetura do fluxo
 
 ```
-01_generate_tracks.py      → gera faixas via ElevenLabs Music (lote, engorda o catálogo)
-01b_generate_faithful_tracks.py → (opcional) renderiza MIDI de domínio público fielmente, com efeito lofi
+01_generate_tracks.py      → (alternativa, não usada) gera faixas via ElevenLabs Music
+01b_generate_faithful_tracks.py → via recomendada: renderiza MIDI de domínio público fielmente, sem estilo
         ↓
 02_generate_background.py  → gera a imagem de fundo da live (uma vez por mood, via Ideogram)
         ↓
@@ -64,14 +67,14 @@ O que fica automático a partir daí:
   sozinha em segundos.
 - **`lofi-radio-refresh.timer`** — toda segunda de madrugada, roda
   `deploy/refresh_playlist.sh`: renderiza qualquer `.mid` novo em
-  `assets/midi_fonte/lofi_classical/` (a etapa 1b agora pula os que já foram
+  `assets/midi_fonte/classical/` (a etapa 1b agora pula os que já foram
   processados, então rodar sem novidade não faz nada), remonta a playlist e
   reinicia a live pra pegar as faixas novas.
 
 Sua única tarefa manual recorrente, se quiser variar o catálogo, é baixar
 mais `.mid` do Mutopia e subir pra VPS:
 ```bash
-scp minha_peca.mid root@SEU_IP:/opt/lofi-ai-radio/assets/midi_fonte/lofi_classical/
+scp minha_peca.mid root@SEU_IP:/opt/lofi-ai-radio/assets/midi_fonte/classical/
 ```
 Se você nunca fizer isso, a live continua no ar em loop com o catálogo atual.
 
@@ -83,10 +86,10 @@ cp config/.env.example config/.env
 # preencha ELEVENLABS_API_KEY, IDEOGRAM_API_KEY e YOUTUBE_STREAM_KEY
 
 # primeira vez (gera faixas + fundo + playlist + começa a live):
-python scripts/run_radio.py --mood lofi_classical --faixas-iniciais 15
+python scripts/run_radio.py --mood classical --faixas-iniciais 15
 
 # depois, só transmitir de novo com o que já foi gerado:
-python scripts/run_radio.py --mood lofi_classical --pular-preparo
+python scripts/run_radio.py --mood classical --pular-preparo
 ```
 
 ## Pegando a chave de transmissão do YouTube
@@ -128,7 +131,7 @@ do Rondo Alla Turca reconhecível de verdade), use a etapa `1b`:
    `SOUNDFONT_PATH` no `.env`
 4. Rode:
    ```bash
-   python scripts/01b_generate_faithful_tracks.py --mood lofi_classical
+   python scripts/01b_generate_faithful_tracks.py --mood classical
    ```
 
 Isso renderiza a melodia de verdade com um piano sintetizado, sem nenhum
@@ -138,15 +141,17 @@ usar nenhuma gravação de terceiros, então continua sem risco de Content ID
 (só a composição, que é de domínio público, e uma renderização nova que
 você mesmo gera).
 
-**Essa é a via recomendada pro mood `lofi_classical`** — apesar do nome da
-pasta ter ficado "lofi" por herança, o conteúdo real que toca é a peça
-clássica de verdade (etapa 1b), não uma reinterpretação lofi (etapa 1).
+**Essa é a via recomendada pro mood `classical`** — a etapa 1 (ElevenLabs)
+fica só como alternativa caso você queira testar variações "inspiradas no
+estilo" no futuro; o canal principal usa exclusivamente a 1b.
 
 ## Engordando a biblioteca de faixas
 
-Pra não repetir a playlist toda hora, rode a etapa 1 periodicamente
-(ex: 1x por semana via cron na VPS) pra acrescentar faixas novas ao
-catálogo, depois remonte a playlist (etapa 3) e reinicie a transmissão.
+Pra não repetir a playlist toda hora, baixe mais `.mid` de domínio público
+(Mutopia) e rode a etapa `1b` de novo — ela só renderiza os arquivos novos,
+sem duplicar os que já estão no catálogo — depois remonte a playlist
+(etapa 3) e reinicie a transmissão. Na VPS isso já roda sozinho toda semana
+(veja [Deploy automatizado](#deploy-automatizado-numa-vps)).
 
 ## Custo estimado (fixo, não por vídeo)
 
@@ -159,10 +164,12 @@ catálogo, depois remonte a playlist (etapa 3) e reinicie a transmissão.
 
 ## Legal
 
-A música é inteiramente composta por IA a partir de prompts — não usa
-nenhuma gravação, partitura ou sample de terceiros. Isso evita tanto o
-direito autoral da composição quanto o direito conexo da gravação
-(fonograma), que continuariam protegidos mesmo em peças clássicas antigas
-de domínio público. Os títulos evitam citar nomes de compositores/artistas
-específicos pra não confundir marca ("estilo barroco" em vez de "estilo
-Bach", por exemplo) — ajuste os prompts em `scripts/moods.py` como preferir.
+A via recomendada (etapa 1b) toca composições de domínio público
+renderizadas por você a partir de MIDI — não usa nenhuma gravação,
+partitura de terceiros ou sample de ninguém. Isso evita tanto o direito
+autoral da composição (já expirado, domínio público) quanto o direito
+conexo da gravação/fonograma, que continuaria protegido se fosse a
+gravação de um pianista específico — aqui a "gravação" é nova, gerada por
+você mesmo. Os títulos evitam citar nomes de compositores específicos pra
+não confundir marca ("estilo barroco" em vez de "estilo Bach", por
+exemplo) — ajuste em `scripts/moods.py` como preferir.

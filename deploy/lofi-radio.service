@@ -8,7 +8,7 @@ Type=simple
 User=lofiradio
 Group=lofiradio
 WorkingDirectory=/opt/lofi-ai-radio/scripts
-ExecStart=/opt/lofi-ai-radio/.venv/bin/python /opt/lofi-ai-radio/scripts/04_transmitir_live.py --mood lofi_classical
+ExecStart=/opt/lofi-ai-radio/.venv/bin/python /opt/lofi-ai-radio/scripts/04_transmitir_live.py --mood classical
 Restart=always
 RestartSec=10
 # ffmpeg as vezes trava numa reconexao de rede em vez de cair sozinho;

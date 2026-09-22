@@ -6,7 +6,7 @@ set -euo pipefail
 
 APP_DIR="/opt/lofi-ai-radio"
 PY="$APP_DIR/.venv/bin/python"
-MOOD="lofi_classical"
+MOOD="classical"
 
 cd "$APP_DIR/scripts"
 
