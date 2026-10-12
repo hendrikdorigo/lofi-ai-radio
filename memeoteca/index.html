@@ -264,12 +264,12 @@
     .frame figcaption small { font-weight: 500; letter-spacing: .04em; opacity: .85; }
 
     .img-box {
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 4 / 3;
       border-radius: 12px;
       overflow: hidden;
       background: #f3efe6;
     }
-    .img-box img { width: 100%; height: 100%; object-fit: contain; }
+    .img-box img { width: 100%; height: 100%; object-fit: cover; }
     .frame--after .img-box { outline: 3px solid var(--yellow); outline-offset: -3px; }
 
     .placeholder {
@@ -329,9 +329,6 @@
     .close:focus-visible { outline: 3px solid var(--purple); outline-offset: 2px; }
 
     .modal .compare { gap: 22px; }
-    .modal .img-box { aspect-ratio: auto; min-height: 280px; background: #f3efe6; display: grid; place-items: center; }
-    .modal .img-box img { height: auto; max-height: 62vh; object-fit: contain; }
-    .modal .placeholder { min-height: 280px; }
 
     .modal__body { display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; margin-top: 28px; }
     .modal__desc h4, .plaque h4 {
@@ -386,7 +383,6 @@
       .compare { grid-template-columns: 1fr; }
       .compare__arrow { position: static; transform: rotate(90deg); margin: -4px auto; }
       .modal { padding: 20px; }
-      .modal .img-box, .modal .placeholder { min-height: 220px; }
       .sticker { right: 6px; }
     }
     @media (prefers-reduced-motion: reduce) {
