@@ -30,10 +30,13 @@ RUN apt-get update \
 
 WORKDIR /app/backend
 COPY backend/requirements.txt ./
-RUN pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/${TORCH_VARIANT} \
+# torch, torchaudio e torchvision precisam vir do MESMO índice (cpu ou cu121):
+# misturar variantes quebra o torchvision ("operator torchvision::nms does not exist").
+RUN pip install torch==2.5.1 torchaudio==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/${TORCH_VARIANT} \
  && if [ "$TORCH_VARIANT" = "cpu" ]; then EXTRA=cpu; else EXTRA=gpu; fi \
  && sed -i "s/audio-separator\[cpu\]/audio-separator[$EXTRA]/" requirements.txt \
- && pip install -r requirements.txt
+ && pip install -r requirements.txt \
+ && python -c "import torch, torchvision; torchvision.ops.nms(torch.zeros(1, 4), torch.zeros(1), 0.5); import demucs.pretrained; from audio_separator.separator import Separator; print('dependencias OK')"
 
 COPY backend/stemsplit ./stemsplit
 COPY --from=frontend /app/frontend/dist /app/frontend/dist

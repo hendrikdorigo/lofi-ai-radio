@@ -161,8 +161,8 @@ python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
 # 2) PyTorch — escolha UMA linha:
-pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cpu     # só CPU
-pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121   # GPU NVIDIA
+pip install torch==2.5.1 torchaudio==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu     # só CPU
+pip install torch==2.5.1 torchaudio==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121   # GPU NVIDIA
 
 # 3) Demais dependências
 #    (com GPU NVIDIA, troque "audio-separator[cpu]" por "audio-separator[gpu]" no requirements.txt)

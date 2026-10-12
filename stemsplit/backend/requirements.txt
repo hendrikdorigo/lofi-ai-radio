@@ -1,8 +1,10 @@
 # PyTorch: instale ANTES, escolhendo CPU ou GPU (ver README).
-#   CPU:  pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cpu
-#   CUDA: pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+#   CPU:  pip install torch==2.5.1 torchaudio==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+#   CUDA: pip install torch==2.5.1 torchaudio==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
+# Os três precisam vir do mesmo índice, senão o torchvision quebra (usado pelo audio-separator).
 torch==2.5.1
 torchaudio==2.5.1
+torchvision==0.20.1
 
 # Separação
 demucs>=4.0.1
