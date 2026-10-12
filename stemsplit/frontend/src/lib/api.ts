@@ -37,6 +37,7 @@ export interface Job {
   warnings: string[];
   queue_position: number | null;
   revision: number;
+  vocal_quality: "rapida" | "melhor";
 }
 
 export interface Health {
@@ -74,16 +75,29 @@ export const api = {
   remove: (id: string) => fetch(`/api/jobs/${id}`, { method: "DELETE" }).then((r) => check<void>(r)),
   peaks: (id: string, revision = 0) =>
     fetch(`/api/jobs/${id}/ondas?v=${revision}`).then((r) => check<Record<string, number[]>>(r)),
+  redoVocals: (id: string, quality = "melhor") =>
+    fetch(`/api/jobs/${id}/refazer-vozes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ qualidade: quality }),
+    }).then((r) => check<Job>(r)),
   resplitGuitars: (id: string) =>
     fetch(`/api/jobs/${id}/refazer-guitarras`, { method: "POST" }).then((r) => check<Job>(r)),
 
   /** Envia a música com barra de progresso do upload (XHR permite acompanhar). */
-  upload(file: File, mode: string, splitDrums: boolean, onProgress: (frac: number) => void): Promise<Job> {
+  upload(
+    file: File,
+    mode: string,
+    splitDrums: boolean,
+    vocalQuality: string,
+    onProgress: (frac: number) => void,
+  ): Promise<Job> {
     return new Promise((resolve, reject) => {
       const form = new FormData();
       form.append("arquivo", file);
       form.append("modo", mode);
       form.append("bateria", String(splitDrums));
+      form.append("qualidade_voz", vocalQuality);
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/jobs");
       xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);

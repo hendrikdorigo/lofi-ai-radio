@@ -62,6 +62,8 @@ class Job:
     warnings: list[str] = field(default_factory=list)
     original_name: str = "original"
     revision: int = 0  # muda quando stems são refeitos (evita cache velho no navegador)
+    vocal_quality: str = "rapida"  # voz principal x backing: "rapida" ou "melhor"
+    task: str = "separar"  # "separar" (tudo) ou "refazer_vozes" (só voz principal x backing)
 
     @property
     def dir(self) -> Path:
@@ -129,11 +131,16 @@ class JobManager:
             self._worker = threading.Thread(target=self._run, name="stemsplit-worker", daemon=True)
             self._worker.start()
 
-    def create(self, upload: Path, filename: str, mode: str, split_drums: bool) -> Job:
+    def create(self, upload: Path, filename: str, mode: str, split_drums: bool, vocal_quality: str = "rapida") -> Job:
         """Registra um job a partir de um arquivo já salvo em ``upload`` e o enfileira."""
         if mode not in pipeline.MODES:
             raise ValueError(f"Modo inválido: {mode}")
-        job = Job(id=uuid.uuid4().hex[:JOB_ID_LEN], filename=filename, mode=mode, split_drums=split_drums)
+        if vocal_quality not in pipeline.VOCAL_QUALITIES:
+            raise ValueError(f"Qualidade de voz inválida: {vocal_quality}")
+        job = Job(
+            id=uuid.uuid4().hex[:JOB_ID_LEN], filename=filename, mode=mode,
+            split_drums=split_drums, vocal_quality=vocal_quality,
+        )
         job.original_name = "original" + Path(filename).suffix.lower()
         job.dir.mkdir(parents=True, exist_ok=True)
         shutil.move(str(upload), job.dir / job.original_name)
@@ -164,10 +171,28 @@ class JobManager:
         if mode and mode != job.mode:
             if mode not in pipeline.MODES:
                 raise ValueError(f"Modo inválido: {mode}")
-            job.mode = mode
+            job.mode, job.task = mode, "separar"
             shutil.rmtree(job.dir / "cache", ignore_errors=True)
         job.status, job.progress, job.error = "na_fila", 0.0, None
         job.stage, job.created_at, job.finished_at = "Aguardando na fila", time.time(), None
+        self._touch(job, persist=True)
+        self._queue.put(job.id)
+        return job
+
+    def redo_vocals(self, job_id: str, quality: str) -> Job:
+        """Enfileira só a separação voz principal x backing de uma música já processada."""
+        job = self.get(job_id)
+        if job is None:
+            raise KeyError(job_id)
+        if quality not in pipeline.VOCAL_QUALITIES:
+            raise ValueError(f"Qualidade de voz inválida: {quality}")
+        names = set(job.stem_names())
+        if job.status != "concluido" or not ({"vocal_principal", "backing_vocals"} <= names or "vocal" in names) \
+                or job.mode != "detalhado":
+            raise ValueError("Só dá para refazer as vozes de uma música já processada no modo Detalhado.")
+        job.task, job.vocal_quality = "refazer_vozes", quality
+        job.status, job.progress, job.error = "na_fila", 0.0, None
+        job.stage, job.finished_at = "Aguardando na fila", None
         self._touch(job, persist=True)
         self._queue.put(job.id)
         return job
@@ -205,6 +230,8 @@ class JobManager:
 
     def process(self, job: Job) -> None:
         """Executa a separação completa de um job (também usado pela CLI/testes)."""
+        if job.task == "refazer_vozes":
+            return self._process_vocals(job)
         start = time.time()
         job.status, job.error, job.device = "processando", None, device_label()
         self._report(job, "Lendo o arquivo de áudio", 0.01)
@@ -220,7 +247,9 @@ class JobManager:
         def on_progress(stage: str, frac: float) -> None:
             self._report(job, stage, 0.05 + 0.85 * frac)
 
-        result = pipeline.separate(audio, job.mode, job.split_drums, on_progress, cache_dir=job.dir / "cache")
+        result = pipeline.separate(
+            audio, job.mode, job.split_drums, on_progress, cache_dir=job.dir / "cache", vocal_quality=job.vocal_quality,
+        )
         job.warnings = result.warnings
 
         self._report(job, "Gerando prévias e formas de onda", 0.9)
@@ -231,6 +260,37 @@ class JobManager:
         job.status, job.progress, job.stage = "concluido", 1.0, "Pronto!"
         job.finished_at = time.time()
         job.seconds = round(job.finished_at - start, 1)
+        self._touch(job, persist=True)
+
+    def _process_vocals(self, job: Job) -> None:
+        """Refaz só voz principal x backing a partir das vozes já separadas."""
+        job.status, job.error, job.device = "processando", None, device_label()
+        stems_dir = job.dir / "stems"
+        parts = ["vocal_principal", "backing_vocals"] if (stems_dir / "vocal_principal.wav").exists() else ["vocal"]
+        self._report(job, "Lendo as vozes já separadas", 0.02)
+        self._save(job)
+        vocals = sum(audio_io.read_wav(stems_dir / f"{name}.wav") for name in parts)
+
+        label = "melhor qualidade, mais lento" if job.vocal_quality == "melhor" else "rápido"
+        stage = f"Refazendo voz principal e backing vocals ({label})"
+        self._report(job, stage, 0.05)  # mostra a etapa já durante o carregamento do modelo
+        new = pipeline.split_lead_backing(vocals, job.vocal_quality, lambda f: self._report(job, stage, 0.05 + 0.85 * f))
+
+        self._report(job, "Gerando prévias e formas de onda", 0.92)
+        for old in ("vocal",):
+            (stems_dir / f"{old}.wav").unlink(missing_ok=True)
+        shutil.rmtree(job.dir / "exports", ignore_errors=True)
+        for old in (job.dir / "previews").glob("*vocal*"):
+            old.unlink(missing_ok=True)
+        save_stems(job.dir, new)
+        names = [n for n in job.stem_names() if n != "vocal"]
+        names += [n for n in new if n not in names]
+        job.stems = stem_catalog.describe(names)
+        job.warnings = [w for w in job.warnings if "Voz principal" not in w]
+        job.revision += 1
+        job.task = "separar"
+        job.status, job.progress, job.stage = "concluido", 1.0, "Pronto!"
+        job.finished_at = time.time()
         self._touch(job, persist=True)
 
 

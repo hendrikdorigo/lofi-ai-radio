@@ -9,6 +9,7 @@ Rotas principais (todas sob ``/api``):
     DELETE /jobs/{id}                     apaga job e arquivos
     POST   /jobs/{id}/tentar-novamente    recoloca na fila um job com erro (opcional: outro modo)
     POST   /jobs/{id}/refazer-guitarras   refaz só a divisão das guitarras (modo Detalhado)
+    POST   /jobs/{id}/refazer-vozes       refaz só voz principal x backing ({"qualidade": "melhor"})
     GET    /jobs/{id}/eventos             progresso em tempo real (Server-Sent Events)
     GET    /jobs/{id}/ondas               formas de onda de todos os stems
     GET    /jobs/{id}/previa/{stem}       MP3 para o player (?tom=-2 transpõe)
@@ -41,7 +42,7 @@ from .config import ALLOWED_EXTENSIONS, settings
 from .device import device_label
 from . import jobs
 from .jobs import Job, manager
-from .pipeline import MODES
+from .pipeline import MODES, VOCAL_QUALITIES
 
 
 @asynccontextmanager
@@ -108,6 +109,7 @@ async def create_job(
     arquivo: UploadFile = File(...),
     modo: str = Form("completo"),
     bateria: bool = Form(False),
+    qualidade_voz: str = Form("rapida"),
 ) -> dict:
     filename = Path(arquivo.filename or "musica").name
     ext = Path(filename).suffix.lower()
@@ -115,6 +117,8 @@ async def create_job(
         raise HTTPException(400, f"Formato não suportado ({ext or 'sem extensão'}). Envie MP3, WAV, FLAC ou M4A.")
     if modo not in MODES:
         raise HTTPException(400, "Modo inválido. Escolha Rápido, Completo ou Detalhado.")
+    if qualidade_voz not in VOCAL_QUALITIES:
+        raise HTTPException(400, "Qualidade de voz inválida. Use 'rapida' ou 'melhor'.")
 
     # Grava em disco em blocos, respeitando o limite de tamanho.
     limit = settings.max_upload_mb * 1024 * 1024
@@ -130,7 +134,7 @@ async def create_job(
                 out.write(chunk)
         if size == 0:
             raise HTTPException(400, "O arquivo está vazio.")
-        job = manager.create(Path(tmp_name), filename, modo, bateria)
+        job = manager.create(Path(tmp_name), filename, modo, bateria, qualidade_voz)
     finally:
         if os.path.exists(tmp_name):
             os.remove(tmp_name)
@@ -176,6 +180,21 @@ def retry_job(job_id: str, body: RetryRequest | None = None) -> dict:
 async def resplit_guitars(job_id: str) -> dict:
     """Refaz só a divisão das guitarras (rápido; útil após melhorias no algoritmo)."""
     return _job_payload(await _run(jobs.resplit_guitars, _job_or_404(job_id)))
+
+
+class RedoVocalsRequest(BaseModel):
+    qualidade: str = "melhor"
+
+
+@app.post("/api/jobs/{job_id}/refazer-vozes")
+def redo_vocals(job_id: str, body: RedoVocalsRequest | None = None) -> dict:
+    """Refaz só voz principal x backing (vai para a fila; acompanhe por /eventos)."""
+    _job_or_404(job_id)
+    try:
+        job = manager.redo_vocals(job_id, body.qualidade if body else "melhor")
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return _job_payload(job)
 
 
 @app.get("/api/jobs/{job_id}/eventos")

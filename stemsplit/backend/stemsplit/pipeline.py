@@ -104,8 +104,13 @@ def separate(
     split_drums: bool = False,
     progress: StageProgress = lambda *_: None,
     cache_dir: Path | None = None,
+    vocal_quality: str = "rapida",
 ) -> SeparationResult:
-    """Separa ``audio`` no modo pedido. ``cache_dir`` guarda etapas intermediárias (modo Detalhado)."""
+    """Separa ``audio`` no modo pedido.
+
+    ``cache_dir`` guarda etapas intermediárias (modo Detalhado). ``vocal_quality``
+    ("rapida" ou "melhor") escolhe o modelo de voz principal x backing vocals.
+    """
     if mode not in MODES:
         raise ValueError(f"Modo inválido: {mode}. Use: {', '.join(MODES)}")
     start = time.time()
@@ -113,7 +118,7 @@ def separate(
     warnings: list[str] = []
 
     if mode == "detalhado":
-        stems = _detailed(audio, split_drums, warnings, progress, cache_dir)
+        stems = _detailed(audio, split_drums, warnings, progress, cache_dir, vocal_quality)
     else:
         model = settings.demucs_4s_model if mode == "rapido" else settings.demucs_6s_model
         plan = [(MODES[mode]["stage"], 1.0)]
@@ -134,15 +139,34 @@ AUTO_MODELS = {
 }
 
 
-def resolve_model(kind: str) -> str:
-    """Nome do modelo de voz a usar: o configurado ou, em "auto", o adequado ao dispositivo."""
+VOCAL_QUALITIES = ("rapida", "melhor")
+
+
+def resolve_model(kind: str, quality: str = "rapida") -> str:
+    """Nome do modelo de voz a usar.
+
+    O configurado tem prioridade. Em "auto": RoFormer em GPU; em CPU, MDX-Net
+    (rápido) — exceto o modelo de voz principal x backing com qualidade
+    "melhor", que usa o RoFormer mesmo em CPU (medido: ~6x mais lento, bem
+    mais preciso; nota 8,4 x 5,4 no catálogo do audio-separator).
+    """
     from .device import get_device
 
     configured = settings.vocal_model if kind == "vocal" else settings.karaoke_model
     if configured != "auto":
         return configured
     gpu_model, cpu_model = AUTO_MODELS[kind]
+    if kind == "karaoke" and quality == "melhor":
+        return gpu_model
     return gpu_model if get_device() in ("cuda", "mps") else cpu_model
+
+
+def split_lead_backing(vocals: np.ndarray, quality: str, progress) -> dict[str, np.ndarray]:
+    """Separa uma faixa de voz em voz principal e backing vocals (usado também para refazer)."""
+    from .separators import roformer_backend as rf
+
+    lead, backing = rf.split_two(vocals, resolve_model("karaoke", quality), "vocals", progress)
+    return {"vocal_principal": lead, "backing_vocals": backing}
 
 
 def _model_label(model: str) -> str:
@@ -154,11 +178,11 @@ def _model_label(model: str) -> str:
     return model
 
 
-def _detailed(audio, split_drums, warnings, progress, cache_dir: Path | None) -> dict[str, np.ndarray]:
+def _detailed(audio, split_drums, warnings, progress, cache_dir: Path | None, vocal_quality: str = "rapida") -> dict[str, np.ndarray]:
     from .separators import roformer_backend as rf
 
     sr = settings.sample_rate
-    vocal_model, karaoke_model = resolve_model("vocal"), resolve_model("karaoke")
+    vocal_model, karaoke_model = resolve_model("vocal"), resolve_model("karaoke", vocal_quality)
     plan = [
         (f"Isolando a voz ({_model_label(vocal_model)})", 0.30),
         ("Separando instrumentos (Demucs 6 stems)", 0.45),

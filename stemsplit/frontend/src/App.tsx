@@ -168,6 +168,12 @@ function JobView({
     );
   }
   if (!job) return <div className="card h-40 animate-pulse" />;
-  if (job.status === "concluido") return <Player job={job} health={health} onJobChange={setJob} />;
+  // Se o player mandou refazer algo que vai para a fila, volta a acompanhar o progresso.
+  const onJobChange = (updated: Job) => {
+    setJob(updated);
+    if (updated.status !== "concluido") setAttempt((n) => n + 1);
+  };
+
+  if (job.status === "concluido") return <Player job={job} health={health} onJobChange={onJobChange} />;
   return <ProgressPanel job={job} offline={offline} onBack={onBack} onRetry={retry} />;
 }

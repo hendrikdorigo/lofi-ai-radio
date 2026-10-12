@@ -18,7 +18,7 @@ def client(monkeypatch):
 
     from stemsplit import api, jobs, pipeline
 
-    def fake_separate(audio, mode, split_drums, progress, cache_dir=None):
+    def fake_separate(audio, mode, split_drums, progress, cache_dir=None, vocal_quality="rapida"):
         for i in range(5):
             progress("Separando (teste)", i / 5)
         n = audio.shape[1]
@@ -155,3 +155,43 @@ def test_resplit_guitars(client):
     other = r.json()["id"]
     _wait_done(client, other)
     assert client.post(f"/api/jobs/{other}/refazer-guitarras").status_code == 400
+
+
+def test_redo_vocals_with_better_quality(client, monkeypatch):
+    from stemsplit import jobs
+
+    seen = {}
+
+    def fake_split(vocals, quality, progress):
+        seen["quality"] = quality
+        progress(0.5)
+        return {"vocal_principal": vocals * 0.7, "backing_vocals": vocals * 0.3}
+
+    monkeypatch.setattr(jobs.pipeline, "split_lead_backing", fake_split)
+    assert client.post("/api/jobs", files={"arquivo": ("v.wav", _wav_bytes(), "audio/wav")},
+                       data={"modo": "detalhado", "qualidade_voz": "pior"}).status_code == 400
+    r = client.post("/api/jobs", files={"arquivo": ("v.wav", _wav_bytes(), "audio/wav")}, data={"modo": "detalhado"})
+    job_id = r.json()["id"]
+    assert _wait_done(client, job_id)["vocal_quality"] == "rapida"
+
+    r = client.post(f"/api/jobs/{job_id}/refazer-vozes", json={"qualidade": "melhor"})
+    assert r.status_code == 200 and r.json()["status"] == "na_fila"
+    job = _wait_done(client, job_id)
+    assert job["status"] == "concluido", job
+    assert seen["quality"] == "melhor" and job["revision"] == 1 and job["vocal_quality"] == "melhor"
+    assert {"vocal_principal", "backing_vocals"} <= {s["name"] for s in job["stems"]}
+    assert client.get(f"/api/jobs/{job_id}/previa/backing_vocals?v=1").status_code == 200
+
+    r = client.post("/api/jobs", files={"arquivo": ("c.wav", _wav_bytes(), "audio/wav")}, data={"modo": "completo"})
+    other = r.json()["id"]
+    _wait_done(client, other)
+    assert client.post(f"/api/jobs/{other}/refazer-vozes").status_code == 400
+
+
+def test_better_quality_uses_roformer_karaoke_even_on_cpu(monkeypatch):
+    from stemsplit import device, pipeline
+
+    monkeypatch.setattr(device, "get_device", lambda: "cpu")
+    assert "KARA_2" in pipeline.resolve_model("karaoke", "rapida")
+    assert "roformer" in pipeline.resolve_model("karaoke", "melhor")
+    assert pipeline.resolve_model("vocal", "melhor").endswith(".onnx")  # isolar a voz continua rápido

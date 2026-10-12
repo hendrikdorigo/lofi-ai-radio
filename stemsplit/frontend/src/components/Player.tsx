@@ -39,6 +39,19 @@ export function Player({ job, health, onJobChange }: Props) {
   }, [job.id]);
 
   const canResplit = job.stems.some((s) => s.name === "guitarra_solo");
+  const canRedoVocals = job.mode === "detalhado" && job.vocal_quality !== "melhor";
+  const redoVocals = () => {
+    if (
+      !confirm(
+        "Refazer a separação entre voz principal e backing vocals com o modelo de melhor qualidade?\n\n" +
+          "Em computador sem placa de vídeo leva bem mais tempo — algo como 10 a 25 minutos por minuto de música. " +
+          "O resto da música não muda, e você pode continuar usando o app.",
+      )
+    )
+      return;
+    mt.pause();
+    run("vozes", async () => onJobChange(await api.redoVocals(job.id, "melhor")));
+  };
   const resplit = () => {
     if (!confirm("Refazer a divisão das guitarras com o algoritmo atual? Leva alguns minutos; o resto não muda.")) return;
     mt.pause();
@@ -140,6 +153,17 @@ export function Player({ job, health, onJobChange }: Props) {
               {busy === "guitarras" ? "Refazendo as guitarras… (alguns minutos)" : "Refazer separação das guitarras"}
             </button>
             <span className="text-neutral-500">Usa o algoritmo mais recente sem reprocessar a música inteira.</span>
+          </div>
+        )}
+        {canRedoVocals && (
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
+            <button className="btn-ghost" disabled={busy !== null} onClick={redoVocals}>
+              {busy === "vozes" ? <Spinner /> : null}
+              Refazer vozes com qualidade melhor
+            </button>
+            <span className="text-neutral-500">
+              Separa melhor voz principal e backing vocals (modelo RoFormer). Mais lento.
+            </span>
           </div>
         )}
       </div>

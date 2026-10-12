@@ -277,7 +277,7 @@ Documentação interativa em **http://localhost:8000/docs**.
 | Método | Rota | Descrição |
 |---|---|---|
 | GET | `/api/saude` | Dispositivo, modos e formatos |
-| POST | `/api/jobs` | Envia música (multipart: `arquivo`, `modo`, `bateria`) |
+| POST | `/api/jobs` | Envia música (multipart: `arquivo`, `modo`, `bateria`, `qualidade_voz` = `rapida`/`melhor`) |
 | GET | `/api/jobs` | Histórico |
 | GET | `/api/jobs/{id}` | Estado do job |
 | DELETE | `/api/jobs/{id}` | Apaga job e arquivos |
@@ -286,6 +286,7 @@ Documentação interativa em **http://localhost:8000/docs**.
 | GET | `/api/jobs/{id}/previa/{stem}?tom=0` | MP3 para o player |
 | GET | `/api/jobs/{id}/baixar/{stem}?formato=wav24&tom=0` | Download de um stem |
 | GET | `/api/jobs/{id}/zip?formato=wav24&tom=0` | Todos os stems em ZIP |
+| POST | `/api/jobs/{id}/refazer-vozes` | Refaz só voz principal × backing (`{"qualidade": "melhor"}`), via fila |
 | POST | `/api/jobs/{id}/refazer-guitarras` | Refaz só a divisão das guitarras (modo Detalhado) |
 | POST | `/api/jobs/{id}/tentar-novamente` | Refaz um job com erro (`{"modo": "completo"}` opcional) |
 | POST | `/api/jobs/{id}/mix` | Mix personalizado `{"volumes": {"baixo": 1, "vocal": 0}, "formato": "mp3", "tom": 0}` |
@@ -352,6 +353,11 @@ stemsplit/
      também não.
 2. **Voz principal × backing vocals** depende do modelo Karaokê: harmonias muito
    próximas da voz principal, ou gritos dobrados em uníssono, podem cair no stem errado.
+   Em CPU o padrão é o modelo rápido (MDX-Net Karaokê 2, nota 5,4 no catálogo), que
+   muitas vezes deixa as vozes juntas. A opção **Melhor** (no envio, ou o botão
+   **Refazer vozes com qualidade melhor** no player) usa o Mel-Band RoFormer Karaokê
+   (nota 8,4) — medido em CPU de 4 núcleos: ~6x mais lento (113 s x 18 s para 20 s de
+   música). O botão refaz só essa etapa, a partir das vozes já separadas.
 3. **Bateria por frequência** (sem `STEMSPLIT_DRUM_MODEL`) é aproximada: tons
    graves vazam para o bumbo e o chimbal para a caixa. Use o modelo DrumSep para
    resultados bem melhores.

@@ -43,6 +43,7 @@ export function UploadPanel({ health, onCreated }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [mode, setMode] = useState(savedMode);
   const [splitDrums, setSplitDrums] = useState(false);
+  const [vocalQuality, setVocalQuality] = useState("rapida");
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +81,7 @@ export function UploadPanel({ health, onCreated }: Props) {
     setError(null);
     setUploading(0);
     try {
-      const job = await api.upload(file, mode, splitDrums, setUploading);
+      const job = await api.upload(file, mode, splitDrums, vocalQuality, setUploading);
       onCreated(job);
     } catch (e) {
       setError((e as Error).message);
@@ -163,6 +164,31 @@ export function UploadPanel({ health, onCreated }: Props) {
             <input type="checkbox" checked={splitDrums} onChange={(e) => setSplitDrums(e.target.checked)} />
             Separar também a bateria em bumbo, caixa e pratos
           </label>
+        )}
+        {mode === "detalhado" && (
+          <fieldset className="mt-3 text-sm text-neutral-300">
+            <legend className="mb-1">Voz principal × backing vocals:</legend>
+            <div className="flex flex-wrap gap-x-6 gap-y-1">
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="radio"
+                  name="qualidade-voz"
+                  checked={vocalQuality === "rapida"}
+                  onChange={() => setVocalQuality("rapida")}
+                />
+                Rápida
+              </label>
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="radio"
+                  name="qualidade-voz"
+                  checked={vocalQuality === "melhor"}
+                  onChange={() => setVocalQuality("melhor")}
+                />
+                Melhor <span className="text-neutral-500">(bem mais lenta sem placa de vídeo)</span>
+              </label>
+            </div>
+          </fieldset>
         )}
       </div>
 
