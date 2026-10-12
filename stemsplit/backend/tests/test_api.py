@@ -136,3 +136,22 @@ def test_interrupted_job_becomes_error_and_can_be_retried(client):
     assert _wait_done(client, job_id)["status"] == "concluido"
     # Só jobs com erro podem ser refeitos.
     assert client.post(f"/api/jobs/{job_id}/tentar-novamente").status_code == 409
+
+
+def test_resplit_guitars(client):
+    r = client.post("/api/jobs", files={"arquivo": ("g.wav", _wav_bytes(), "audio/wav")}, data={"modo": "detalhado"})
+    job_id = r.json()["id"]
+    job = _wait_done(client, job_id)
+    before = set(client.get(f"/api/jobs/{job_id}/ondas").json())
+
+    r = client.post(f"/api/jobs/{job_id}/refazer-guitarras")
+    assert r.status_code == 200, r.text
+    assert r.json()["revision"] == 1
+    assert set(client.get(f"/api/jobs/{job_id}/ondas").json()) == before  # nenhuma onda se perdeu
+    assert client.get(f"/api/jobs/{job_id}/previa/guitarra_solo?v=1").status_code == 200
+
+    # Modo sem as partes de guitarra: recusa com mensagem.
+    r = client.post("/api/jobs", files={"arquivo": ("c.wav", _wav_bytes(), "audio/wav")}, data={"modo": "completo"})
+    other = r.json()["id"]
+    _wait_done(client, other)
+    assert client.post(f"/api/jobs/{other}/refazer-guitarras").status_code == 400

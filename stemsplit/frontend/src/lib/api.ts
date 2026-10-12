@@ -36,6 +36,7 @@ export interface Job {
   analysis: Analysis;
   warnings: string[];
   queue_position: number | null;
+  revision: number;
 }
 
 export interface Health {
@@ -71,7 +72,10 @@ export const api = {
       body: JSON.stringify({ modo: mode ?? null }),
     }).then((r) => check<Job>(r)),
   remove: (id: string) => fetch(`/api/jobs/${id}`, { method: "DELETE" }).then((r) => check<void>(r)),
-  peaks: (id: string) => fetch(`/api/jobs/${id}/ondas`).then((r) => check<Record<string, number[]>>(r)),
+  peaks: (id: string, revision = 0) =>
+    fetch(`/api/jobs/${id}/ondas?v=${revision}`).then((r) => check<Record<string, number[]>>(r)),
+  resplitGuitars: (id: string) =>
+    fetch(`/api/jobs/${id}/refazer-guitarras`, { method: "POST" }).then((r) => check<Job>(r)),
 
   /** Envia a música com barra de progresso do upload (XHR permite acompanhar). */
   upload(file: File, mode: string, splitDrums: boolean, onProgress: (frac: number) => void): Promise<Job> {
@@ -113,8 +117,9 @@ export const api = {
     return () => source.close();
   },
 
-  previewUrl: (id: string, stem: string, semitones: number) =>
-    `/api/jobs/${id}/previa/${stem}${semitones ? `?tom=${semitones}` : ""}`,
+  // "v" muda quando os stems são refeitos, para o navegador não usar a prévia antiga do cache.
+  previewUrl: (id: string, stem: string, semitones: number, revision = 0) =>
+    `/api/jobs/${id}/previa/${stem}?tom=${semitones}&v=${revision}`,
   stemUrl: (id: string, stem: string, format: string, semitones: number) =>
     `/api/jobs/${id}/baixar/${stem}?formato=${format}&tom=${semitones}`,
   zipUrl: (id: string, format: string, semitones: number) => `/api/jobs/${id}/zip?formato=${format}&tom=${semitones}`,

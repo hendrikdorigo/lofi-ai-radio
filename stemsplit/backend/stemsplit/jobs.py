@@ -61,6 +61,7 @@ class Job:
     analysis: dict = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     original_name: str = "original"
+    revision: int = 0  # muda quando stems são refeitos (evita cache velho no navegador)
 
     @property
     def dir(self) -> Path:
@@ -235,14 +236,48 @@ class JobManager:
 
 def save_stems(job_dir: Path, stems: dict) -> None:
     """Salva os stems em WAV float, as prévias MP3 e o arquivo de formas de onda."""
-    peaks = {}
+    peaks_file = job_dir / "peaks.json"
+    peaks = json.loads(peaks_file.read_text(encoding="utf-8")) if peaks_file.exists() else {}
     for name, audio in stems.items():
         audio_io.save_wav_float(job_dir / "stems" / f"{name}.wav", audio)
         preview = job_dir / "previews" / f"{name}.mp3"
         preview.parent.mkdir(parents=True, exist_ok=True)
         audio_io.encode_mp3(audio, preview, settings.sample_rate, settings.preview_bitrate)
         peaks[name] = audio_io.compute_peaks(audio)
-    (job_dir / "peaks.json").write_text(json.dumps(peaks), encoding="utf-8")
+    peaks_file.write_text(json.dumps(peaks), encoding="utf-8")
+
+
+GUITAR_PARTS = ("guitarra_1", "guitarra_2", "guitarra_solo", "guitarra_base")
+_resplit_lock = threading.Lock()
+
+
+def resplit_guitars(job: Job) -> Job:
+    """Refaz só a divisão das guitarras de uma música já processada (modo Detalhado).
+
+    As 4 partes somadas reconstroem o stem de guitarra original, então dá para
+    rodar de novo a divisão (ex.: depois de uma melhoria no algoritmo) em
+    minutos, sem refazer a separação inteira.
+    """
+    from .separators import dsp
+
+    if job.status != "concluido" or not set(GUITAR_PARTS) <= set(job.stem_names()):
+        raise ValueError("Só dá para refazer as guitarras de uma música já processada no modo Detalhado.")
+    if not _resplit_lock.acquire(blocking=False):
+        raise ValueError("Já existe uma divisão de guitarras em andamento. Aguarde terminar.")
+    try:
+        stems_dir = job.dir / "stems"
+        guitar = sum(audio_io.read_wav(stems_dir / f"{name}.wav") for name in GUITAR_PARTS)
+        parts = dsp.split_guitar(guitar, settings.sample_rate)
+        # Downloads e prévias transpostas antigos ficam inválidos.
+        shutil.rmtree(job.dir / "exports", ignore_errors=True)
+        for old in (job.dir / "previews").glob("guitarra_*"):
+            old.unlink(missing_ok=True)
+        save_stems(job.dir, parts)
+        job.revision += 1
+        manager._touch(job, persist=True)
+        return job
+    finally:
+        _resplit_lock.release()
 
 
 manager = JobManager()

@@ -168,6 +168,6 @@ function JobView({
     );
   }
   if (!job) return <div className="card h-40 animate-pulse" />;
-  if (job.status === "concluido") return <Player job={job} health={health} />;
+  if (job.status === "concluido") return <Player job={job} health={health} onJobChange={setJob} />;
   return <ProgressPanel job={job} offline={offline} onBack={onBack} onRetry={retry} />;
 }

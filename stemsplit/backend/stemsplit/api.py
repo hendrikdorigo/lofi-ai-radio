@@ -8,6 +8,7 @@ Rotas principais (todas sob ``/api``):
     GET    /jobs/{id}                     estado de um job
     DELETE /jobs/{id}                     apaga job e arquivos
     POST   /jobs/{id}/tentar-novamente    recoloca na fila um job com erro (opcional: outro modo)
+    POST   /jobs/{id}/refazer-guitarras   refaz só a divisão das guitarras (modo Detalhado)
     GET    /jobs/{id}/eventos             progresso em tempo real (Server-Sent Events)
     GET    /jobs/{id}/ondas               formas de onda de todos os stems
     GET    /jobs/{id}/previa/{stem}       MP3 para o player (?tom=-2 transpõe)
@@ -38,6 +39,7 @@ from . import export
 from .audio_io import EXPORT_FORMATS
 from .config import ALLOWED_EXTENSIONS, settings
 from .device import device_label
+from . import jobs
 from .jobs import Job, manager
 from .pipeline import MODES
 
@@ -168,6 +170,12 @@ def retry_job(job_id: str, body: RetryRequest | None = None) -> dict:
     except RuntimeError as exc:
         raise HTTPException(409, str(exc)) from exc
     return _job_payload(job)
+
+
+@app.post("/api/jobs/{job_id}/refazer-guitarras")
+async def resplit_guitars(job_id: str) -> dict:
+    """Refaz só a divisão das guitarras (rápido; útil após melhorias no algoritmo)."""
+    return _job_payload(await _run(jobs.resplit_guitars, _job_or_404(job_id)))
 
 
 @app.get("/api/jobs/{job_id}/eventos")

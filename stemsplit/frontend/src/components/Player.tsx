@@ -7,6 +7,7 @@ import { TrackRow } from "./TrackRow";
 interface Props {
   job: Job;
   health: Health | null;
+  onJobChange: (job: Job) => void;
 }
 
 const FORMAT_KEY = "stemsplit.formato";
@@ -19,20 +20,30 @@ function loadFormat(): string {
   }
 }
 
-export function Player({ job, health }: Props) {
+export function Player({ job, health, onJobChange }: Props) {
   const [semitones, setSemitones] = useState(0);
   const [pendingSemitones, setPendingSemitones] = useState(0);
   const [format, setFormat] = useState(loadFormat);
   const [peaks, setPeaks] = useState<Record<string, number[]>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const mt = useMultitrack(job.id, job.stems, semitones);
+  const mt = useMultitrack(job.id, job.stems, semitones, job.revision ?? 0);
 
   useEffect(() => {
-    api.peaks(job.id).then(setPeaks).catch(() => setPeaks({}));
+    api.peaks(job.id, job.revision ?? 0).then(setPeaks).catch(() => setPeaks({}));
+  }, [job.id, job.revision]);
+
+  useEffect(() => {
     setSemitones(0);
     setPendingSemitones(0);
   }, [job.id]);
+
+  const canResplit = job.stems.some((s) => s.name === "guitarra_solo");
+  const resplit = () => {
+    if (!confirm("Refazer a divisão das guitarras com o algoritmo atual? Leva alguns minutos; o resto não muda.")) return;
+    mt.pause();
+    run("guitarras", async () => onJobChange(await api.resplitGuitars(job.id)));
+  };
 
   useEffect(() => {
     try {
@@ -121,6 +132,15 @@ export function Player({ job, health }: Props) {
               <li key={w}>⚠ {w}</li>
             ))}
           </ul>
+        )}
+        {canResplit && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+            <button className="btn-ghost" disabled={busy !== null} onClick={resplit}>
+              {busy === "guitarras" ? <Spinner /> : null}
+              {busy === "guitarras" ? "Refazendo as guitarras… (alguns minutos)" : "Refazer separação das guitarras"}
+            </button>
+            <span className="text-neutral-500">Usa o algoritmo mais recente sem reprocessar a música inteira.</span>
+          </div>
         )}
       </div>
 

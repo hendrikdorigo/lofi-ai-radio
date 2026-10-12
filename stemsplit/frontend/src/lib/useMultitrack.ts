@@ -36,7 +36,7 @@ export function isAudible(tracks: Record<string, TrackState>, name: string): boo
   return anySolo ? t.solo && !t.muted : !t.muted;
 }
 
-export function useMultitrack(jobId: string, stems: Stem[], semitones: number) {
+export function useMultitrack(jobId: string, stems: Stem[], semitones: number, revision = 0) {
   const stemsKey = stems.map((s) => s.name).join(",");
   const elsRef = useRef<Map<string, AudioWithPitch>>(new Map());
   const [tracks, setTracks] = useState<Record<string, TrackState>>({});
@@ -115,7 +115,7 @@ export function useMultitrack(jobId: string, stems: Stem[], semitones: number) {
           };
           el.addEventListener("canplay", ok, { once: true });
           el.addEventListener("error", fail, { once: true });
-          el.src = api.previewUrl(jobId, name, semitones);
+          el.src = api.previewUrl(jobId, name, semitones, revision);
           el.load();
         }),
     );
@@ -138,7 +138,7 @@ export function useMultitrack(jobId: string, stems: Stem[], semitones: number) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId, stemsKey, semitones]);
+  }, [jobId, stemsKey, semitones, revision]);
 
   // ------------------------------------------------- volume / mute / solo
   useEffect(() => {

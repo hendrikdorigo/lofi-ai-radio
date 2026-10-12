@@ -65,13 +65,21 @@ música ──► BS-RoFormer ──► voz ───────► Mel-Band Ro
                                                                              └─► guitarra base (centro, percussiva/grave)
 ```
 
-- **Guitarra 1 / 2**: para cada ponto tempo-frequência do espectrograma, mede
-  quanto o som está à esquerda ou à direita. Em gravações de metal as bases
-  costumam ser gravadas duas vezes e abertas em L/R, e duetos em harmonia
-  também — então isso separa bem "quem está de cada lado".
-- **Solo × base**: o que sobra no centro é dividido por *HPSS* (separação
-  harmônico/percussivo): notas sustentadas e agudas → solo; palhetadas abafadas,
-  ataques e graves → base.
+- **Guitarra 1 / 2**: uma guitarra no centro chega aos dois canais com a mesma
+  fase; uma base gravada duas vezes (uma tomada de cada lado, como no metal e no
+  hard rock) nunca chega — as tomadas têm pequenas diferenças de tempo. O app
+  mede essa diferença de fase (não só o volume) e manda o que é diferente em cada
+  lado para Guitarra 1 (esquerda) e Guitarra 2 (direita). Duetos em harmonia
+  abertos em L/R também caem aqui.
+- **Solo × base**: no que sobra no centro, o app rastreia a melodia principal nota
+  a nota (pYIN, com os graves filtrados para os acordes não atrapalharem) e
+  extrai os harmônicos dela como "Guitarra solo"; o resto (acordes, graves) é a
+  "Guitarra base".
+- Num teste sintético com base dobrada + solo no centro: o solo foi de 7,1 para
+  8,1 dB de SDR em relação à versão anterior (HPSS), e a base dobrada passou a ir
+  para Guitarra 1/2 (6,3 dB, antes 0 dB).
+- Músicas já processadas podem usar o algoritmo novo pelo botão **Refazer
+  separação das guitarras** — leva minutos, não refaz o resto.
 - As 4 partes de guitarra **somam exatamente** o stem de guitarra original — nada
   se perde, e o player continua soando como a música original com tudo ligado.
 - Se um modelo RoFormer não puder ser carregado, o pipeline continua com o
@@ -278,6 +286,7 @@ Documentação interativa em **http://localhost:8000/docs**.
 | GET | `/api/jobs/{id}/previa/{stem}?tom=0` | MP3 para o player |
 | GET | `/api/jobs/{id}/baixar/{stem}?formato=wav24&tom=0` | Download de um stem |
 | GET | `/api/jobs/{id}/zip?formato=wav24&tom=0` | Todos os stems em ZIP |
+| POST | `/api/jobs/{id}/refazer-guitarras` | Refaz só a divisão das guitarras (modo Detalhado) |
 | POST | `/api/jobs/{id}/tentar-novamente` | Refaz um job com erro (`{"modo": "completo"}` opcional) |
 | POST | `/api/jobs/{id}/mix` | Mix personalizado `{"volumes": {"baixo": 1, "vocal": 0}, "formato": "mp3", "tom": 0}` |
 
@@ -334,10 +343,13 @@ stemsplit/
 1. **Guitarra solo × base e guitarra 1 × 2 são estimativas.** Não existe (ainda)
    modelo open source confiável treinado para separar guitarra base de solo. A
    divisão usa a posição no estéreo e o caráter do som:
-   - funciona bem quando as guitarras estão abertas em L/R (muito comum no metal);
-   - **não separa duas guitarras na mesma posição** do estéreo (ex.: solo e base
-     ambos no centro, ou gravações mono/antigas) — nesse caso o app mostra um aviso;
-   - o "solo" pode trazer um pouco de base sustentada (acordes abertos) e vice-versa.
+   - funciona melhor com base dobrada/aberta em L/R e solo no centro (muito comum
+     no rock e no metal);
+   - quando solo e base tocam notas que coincidem, parte do solo fica na base
+     (no teste sintético, ~30% da energia do solo) e vice-versa;
+   - duas guitarras na mesma posição do estéreo tocando acordes (ou gravações
+     mono) não se separam; solos com dois guitarristas no centro ao mesmo tempo
+     também não.
 2. **Voz principal × backing vocals** depende do modelo Karaokê: harmonias muito
    próximas da voz principal, ou gritos dobrados em uníssono, podem cair no stem errado.
 3. **Bateria por frequência** (sem `STEMSPLIT_DRUM_MODEL`) é aproximada: tons
