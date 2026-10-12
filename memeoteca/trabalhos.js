@@ -50,14 +50,14 @@ const TRABALHOS = [
     plataforma: "Instagram"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "AAAAAAHHHHHH",
+    imagemOriginal: "imagens/trabalho04-original.jpg",
+    imagemReleitura: "imagens/trabalho04-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Bárbara, Christian",
+    plataforma: "TikTok"
   },
   {
     titulo: "",
