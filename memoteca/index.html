@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MEMOTECA — Fotoblog de Releituras de Memes Escolares</title>
+  <meta name="description" content="Museu de Releituras de Memes Escolares: exposição digital das releituras de memes produzidas pelos alunos.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #faf7f0;
+      --paper: #ffffff;
+      --ink: #141218;
+      --muted: #5f5a68;
+      --line: #e7e1d4;
+      --yellow: #ffd23f;
+      --yellow-soft: #fff4c7;
+      --purple: #6b3fe0;
+      --purple-dark: #4b23b8;
+      --purple-soft: #efe8ff;
+      --radius: 18px;
+      --shadow: 0 1px 2px rgba(20, 18, 24, .06), 0 8px 24px rgba(20, 18, 24, .07);
+      --display: "Bricolage Grotesque", system-ui, sans-serif;
+      --body: "DM Sans", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--body);
+      font-size: 17px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { max-width: 100%; display: block; }
+    .wrap { width: min(1180px, 100% - 32px); margin-inline: auto; }
+
+    /* ---------- Barra superior ---------- */
+    .topbar {
+      background: var(--ink);
+      color: var(--yellow);
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 9px 0;
+    }
+    .topbar__track {
+      display: inline-block;
+      animation: marquee 32s linear infinite;
+    }
+    .topbar__track span { margin-right: 2.5em; }
+    .topbar__track span::after { content: "✦"; margin-left: 2.5em; color: #b9a2ff; }
+    @keyframes marquee { to { transform: translateX(-50%); } }
+
+    /* ---------- Cabeçalho ---------- */
+    .hero {
+      position: relative;
+      padding: 72px 0 56px;
+      overflow: hidden;
+    }
+    .hero::before {
+      /* textura de pontinhos */
+      content: "";
+      position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(107, 63, 224, .16) 1.2px, transparent 1.2px);
+      background-size: 22px 22px;
+      mask-image: linear-gradient(to bottom, #000 30%, transparent 95%);
+      pointer-events: none;
+    }
+    .hero__inner { position: relative; display: grid; gap: 40px; align-items: center; grid-template-columns: 1.25fr .9fr; }
+
+    .tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--purple-soft);
+      color: var(--purple-dark);
+      font-weight: 700; font-size: 13px;
+      letter-spacing: .08em; text-transform: uppercase;
+      padding: 6px 14px; border-radius: 999px;
+    }
+    .tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--purple); }
+
+    .logo {
+      font-family: var(--display);
+      font-weight: 800;
+      font-size: clamp(56px, 11vw, 132px);
+      line-height: .88;
+      letter-spacing: -.045em;
+      margin: 20px 0 14px;
+    }
+    .logo span {
+      background: linear-gradient(transparent 58%, var(--yellow) 58%, var(--yellow) 92%, transparent 92%);
+      padding: 0 .04em;
+    }
+    .subtitle {
+      font-family: var(--display);
+      font-weight: 500;
+      font-style: normal;
+      font-size: clamp(20px, 2.6vw, 26px);
+      color: var(--purple-dark);
+      margin: 0 0 26px;
+    }
+    .intro { max-width: 58ch; color: var(--muted); margin: 0 0 30px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      font: 700 16px/1 var(--body);
+      color: var(--ink);
+      background: var(--yellow);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 14px 24px;
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 var(--ink);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+    .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+    .btn:focus-visible { outline: 3px solid var(--purple); outline-offset: 3px; }
+
+    /* Frase em formato de "post de meme" */
+    .quote-card {
+      position: relative;
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      border-radius: var(--radius);
+      box-shadow: 8px 8px 0 var(--purple);
+      padding: 26px 26px 22px;
+      transform: rotate(1.5deg);
+    }
+    .quote-card__head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--yellow); border: 2px solid var(--ink);
+      display: grid; place-items: center;
+      font-family: var(--display); font-weight: 800; font-size: 20px;
+    }
+    .quote-card__name { font-weight: 700; line-height: 1.2; }
+    .quote-card__handle { font-size: 14px; color: var(--muted); }
+    .quote-card blockquote {
+      margin: 0;
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: clamp(26px, 3.2vw, 36px);
+      line-height: 1.1;
+      letter-spacing: -.02em;
+    }
+    .quote-card blockquote em { font-style: normal; color: var(--purple); }
+    .quote-card__foot {
+      display: flex; gap: 18px; margin-top: 20px; padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-size: 14px; color: var(--muted);
+    }
+    .sticker {
+      position: absolute; top: -18px; right: -14px;
+      background: var(--yellow);
+      border: 2px solid var(--ink);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-family: var(--display); font-weight: 800; font-size: 14px;
+      transform: rotate(8deg);
+    }
+
+    /* ---------- Faixa "como funciona" ---------- */
+    .steps {
+      background: var(--ink); color: #fff;
+      border-radius: var(--radius);
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      overflow: hidden;
+    }
+    .step { padding: 24px 26px; display: flex; gap: 14px; align-items: flex-start; }
+    .step + .step { border-left: 1px solid rgba(255, 255, 255, .12); }
+    .step__n {
+      flex: none;
+      width: 34px; height: 34px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--yellow); color: var(--ink);
+      font-family: var(--display); font-weight: 800;
+    }
+    .step strong { display: block; font-family: var(--display); font-size: 18px; }
+    .step p { margin: 2px 0 0; font-size: 15px; color: #c9c4d4; }
+
+    /* ---------- Galeria ---------- */
+    .gallery { padding: 80px 0 90px; }
+    .section-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 34px; flex-wrap: wrap; }
+    .section-head h2 {
+      font-family: var(--display); font-weight: 800;
+      font-size: clamp(34px, 5vw, 52px); line-height: 1; letter-spacing: -.03em;
+      margin: 10px 0 0;
+    }
+    .section-head p { margin: 0; color: var(--muted); max-width: 42ch; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr));
+      gap: 28px;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: flex; flex-direction: column;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 2px 4px rgba(20,18,24,.06), 0 18px 40px rgba(20,18,24,.10); }
+
+    .card__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding: 2px 4px 0; }
+    .card__num {
+      font-family: var(--display); font-weight: 800; font-size: 13px; letter-spacing: .1em;
+      color: var(--purple-dark);
+    }
+    .card__title {
+      font-family: var(--display); font-weight: 700;
+      font-size: 24px; line-height: 1.15; letter-spacing: -.015em;
+      margin: 0 4px 16px;
+    }
+
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; position: relative; }
+    .compare__arrow {
+      position: absolute; left: 50%; top: calc(50% + 14px);
+      transform: translate(-50%, -50%);
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--ink); color: var(--yellow);
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 18px;
+      border: 3px solid var(--paper);
+      z-index: 2;
+    }
+    .frame { margin: 0; }
+    .frame figcaption {
+      display: inline-block;
+      font-family: var(--display); font-weight: 800; font-size: 12px; letter-spacing: .1em;
+      padding: 4px 10px; border-radius: 6px; margin-bottom: 8px;
+    }
+    .frame--before figcaption { background: var(--ink); color: #fff; }
+    .frame--after figcaption { background: var(--yellow); color: var(--ink); }
+    .frame figcaption small { font-weight: 500; letter-spacing: .04em; opacity: .85; }
+
+    .img-box {
+      aspect-ratio: 1 / 1;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f3efe6;
+    }
+    .img-box img { width: 100%; height: 100%; object-fit: cover; }
+    .frame--after .img-box { outline: 3px solid var(--yellow); outline-offset: -3px; }
+
+    .placeholder {
+      width: 100%; height: 100%;
+      display: grid; place-content: center; text-align: center; gap: 8px;
+      padding: 16px;
+      border: 2px dashed #cfc7b6;
+      border-radius: 12px;
+      color: #8a8393; font-size: 14px; line-height: 1.35;
+    }
+    .placeholder svg { margin: 0 auto; opacity: .55; }
+    .frame--after .placeholder { border-color: #e9c440; background: var(--yellow-soft); color: #7a6a2a; }
+
+    .card__excerpt {
+      margin: 18px 4px 6px; color: var(--muted); font-size: 15.5px;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .card__meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 4px 18px; }
+    .chip {
+      font-size: 13px; font-weight: 500;
+      background: var(--bg); border: 1px solid var(--line);
+      padding: 4px 10px; border-radius: 999px;
+    }
+    .chip b { font-weight: 700; }
+    .card .btn { margin-top: auto; align-self: flex-start; font-size: 15px; padding: 12px 20px; }
+
+    .empty { color: #a39dab; font-style: italic; }
+
+    /* ---------- Modal ---------- */
+    dialog {
+      border: none; padding: 0;
+      width: min(1040px, 100% - 32px);
+      max-height: calc(100dvh - 32px);
+      border-radius: 22px;
+      background: var(--paper);
+      color: var(--ink);
+      box-shadow: 0 30px 80px rgba(0,0,0,.35);
+    }
+    dialog::backdrop { background: rgba(20, 18, 24, .72); backdrop-filter: blur(3px); }
+    dialog[open] { animation: pop .22s ease; }
+    @keyframes pop { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+
+    .modal { padding: 30px; }
+    .modal__head { display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 22px; }
+    .modal__head h3 {
+      font-family: var(--display); font-weight: 800;
+      font-size: clamp(26px, 4vw, 38px); line-height: 1.05; letter-spacing: -.025em;
+      margin: 6px 0 0;
+    }
+    .close {
+      flex: none;
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 2px solid var(--ink); background: var(--paper);
+      font-size: 22px; line-height: 1; cursor: pointer;
+    }
+    .close:hover { background: var(--yellow); }
+    .close:focus-visible { outline: 3px solid var(--purple); outline-offset: 2px; }
+
+    .modal .compare { gap: 22px; }
+    .modal .img-box { aspect-ratio: auto; min-height: 280px; background: #f3efe6; display: grid; place-items: center; }
+    .modal .img-box img { height: auto; max-height: 62vh; object-fit: contain; }
+    .modal .placeholder { min-height: 280px; }
+
+    .modal__body { display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; margin-top: 28px; }
+    .modal__desc h4, .plaque h4 {
+      font-family: var(--display); font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--purple-dark); margin: 0 0 8px;
+    }
+    .modal__desc p { margin: 0; white-space: pre-line; }
+
+    /* "placa de museu" */
+    .plaque {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--purple);
+      border-radius: 14px;
+      padding: 20px 22px;
+    }
+    .plaque dl { margin: 0; display: grid; gap: 10px; }
+    .plaque dt { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .plaque dd { margin: 0 0 4px; font-weight: 500; }
+
+    /* ---------- Rodapé ---------- */
+    footer {
+      background: var(--ink); color: #fff;
+      padding: 56px 0 44px;
+      text-align: center;
+    }
+    footer .foot-logo {
+      font-family: var(--display); font-weight: 800; font-size: clamp(22px, 3.4vw, 30px);
+      letter-spacing: -.02em; margin: 0;
+    }
+    footer .foot-logo span { color: var(--yellow); }
+    footer .foot-quote {
+      margin: 14px auto 0; max-width: 46ch;
+      font-size: 18px; color: #d8d3e2; font-style: italic;
+    }
+    footer .foot-dots { margin-top: 26px; display: flex; justify-content: center; gap: 8px; }
+    footer .foot-dots i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+
+    /* ---------- Responsivo ---------- */
+    @media (max-width: 900px) {
+      .hero { padding: 48px 0 40px; }
+      .hero__inner { grid-template-columns: 1fr; }
+      .quote-card { transform: rotate(0); margin: 10px 8px 0 0; }
+      .steps { grid-template-columns: 1fr; }
+      .step + .step { border-left: 0; border-top: 1px solid rgba(255,255,255,.12); }
+      .modal__body { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      body { font-size: 16px; }
+      .compare { grid-template-columns: 1fr; }
+      .compare__arrow { position: static; transform: rotate(90deg); margin: -4px auto; }
+      .modal { padding: 20px; }
+      .modal .img-box, .modal .placeholder { min-height: 220px; }
+      .sticker { right: 6px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .topbar__track { animation: none; }
+      * { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar" aria-hidden="true">
+    <div class="topbar__track">
+      <span>Exposição digital</span><span>Releituras de memes</span><span>Cotidiano escolar</span><span>Cultura digital</span><span>Criatividade</span><span>Fotoblog</span>
+      <span>Exposição digital</span><span>Releituras de memes</span><span>Cotidiano escolar</span><span>Cultura digital</span><span>Criatividade</span><span>Fotoblog</span>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div class="wrap hero__inner">
+      <div>
+        <span class="tag">Fotoblog · Exposição da turma</span>
+        <h1 class="logo"><span>MEMO</span>TECA</h1>
+        <p class="subtitle">Museu de Releituras de Memes Escolares.</p>
+        <p class="intro">
+          A Memoteca é um fotoblog criado para compartilhar as releituras de memes produzidas pelos alunos.
+          A partir de memes da internet, os estudantes criaram novas versões inspiradas em situações do
+          cotidiano escolar, unindo criatividade, interpretação e cultura digital.
+        </p>
+        <a class="btn" href="#galeria">Visitar a exposição <span aria-hidden="true">↓</span></a>
+      </div>
+
+      <aside class="quote-card" aria-label="Frase da exposição">
+        <span class="sticker" aria-hidden="true">✦ em cartaz</span>
+        <div class="quote-card__head">
+          <div class="avatar" aria-hidden="true">M</div>
+          <div>
+            <div class="quote-card__name">Memoteca</div>
+            <div class="quote-card__handle">@memoteca.escolar</div>
+          </div>
+        </div>
+        <blockquote>“Do meme original à <em>criatividade</em> na escola.”</blockquote>
+        <div class="quote-card__foot" aria-hidden="true">
+          <span>♡ curtir</span><span>↻ reler</span><span>✎ recriar</span>
+        </div>
+      </aside>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="steps" aria-label="Como os trabalhos foram feitos">
+      <div class="step"><span class="step__n">1</span><div><strong>Pesquisa</strong><p>Escolha de um meme da internet e investigação da sua origem.</p></div></div>
+      <div class="step"><span class="step__n">2</span><div><strong>Releitura</strong><p>Criação de uma nova versão inspirada no cotidiano escolar.</p></div></div>
+      <div class="step"><span class="step__n">3</span><div><strong>Exposição</strong><p>Publicação no fotoblog para toda a comunidade ver.</p></div></div>
+    </section>
+  </div>
+
+  <main id="galeria" class="gallery">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <span class="tag">Galeria</span>
+          <h2>Antes &amp; depois</h2>
+        </div>
+        <p>Compare cada meme original com a releitura criada pela turma. Clique em “Ver trabalho completo” para ver todos os detalhes.</p>
+      </div>
+
+      <div class="grid" id="grid"></div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p class="foot-logo"><span>MEMOTECA</span> — Fotoblog de Releituras de Memes Escolares</p>
+      <p class="foot-quote">“Cada meme tem uma história. Cada releitura revela um novo olhar.”</p>
+      <div class="foot-dots" aria-hidden="true">
+        <i style="background:var(--yellow)"></i><i style="background:var(--purple)"></i><i style="background:#fff"></i>
+      </div>
+    </div>
+  </footer>
+
+  <dialog id="modal" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal__head">
+        <div>
+          <span class="card__num" id="modal-num"></span>
+          <h3 id="modal-title"></h3>
+        </div>
+        <button class="close" id="modal-close" aria-label="Fechar">×</button>
+      </div>
+      <div class="compare" id="modal-compare"></div>
+      <div class="modal__body">
+        <div class="modal__desc">
+          <h4>Descrição do meme</h4>
+          <p id="modal-desc"></p>
+        </div>
+        <div class="plaque">
+          <h4>Ficha do trabalho</h4>
+          <dl id="modal-info"></dl>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="trabalhos.js"></script>
+  <script>
+    (function () {
+      const A_PREENCHER = "A preencher";
+      const grid = document.getElementById("grid");
+      const modal = document.getElementById("modal");
+      const lista = (typeof TRABALHOS !== "undefined" && Array.isArray(TRABALHOS)) ? TRABALHOS : [];
+
+      const icone = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>';
+
+      function el(tag, cls, texto) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (texto != null) e.textContent = texto;
+        return e;
+      }
+      function valor(v) { return (v && String(v).trim()) || ""; }
+      function numero(i) { return "Nº " + String(i + 1).padStart(2, "0"); }
+      function titulo(t, i) { return valor(t.titulo) || "Trabalho " + String(i + 1).padStart(2, "0") + " (título a preencher)"; }
+
+      function campo(pai, texto) {
+        const v = valor(texto);
+        if (v) pai.textContent = v;
+        else pai.appendChild(el("span", "empty", A_PREENCHER));
+        return pai;
+      }
+
+      function imagem(src, alt, aviso) {
+        const box = el("div", "img-box");
+        if (valor(src)) {
+          const img = el("img");
+          img.src = src; img.alt = alt; img.loading = "lazy";
+          img.onerror = function () { box.replaceChildren(vazio(aviso + " (arquivo não encontrado)")); };
+          box.appendChild(img);
+        } else {
+          box.appendChild(vazio(aviso));
+        }
+        return box;
+      }
+      function vazio(texto) {
+        const p = el("div", "placeholder");
+        p.innerHTML = icone;
+        p.appendChild(el("span", null, texto));
+        return p;
+      }
+
+      function comparacao(t, i) {
+        const wrap = el("div", "compare");
+        const nome = titulo(t, i);
+
+        const antes = el("figure", "frame frame--before");
+        const capA = el("figcaption", null, "ANTES ");
+        capA.appendChild(el("small", null, "— MEME ORIGINAL"));
+        antes.append(capA, imagem(t.imagemOriginal, "Meme original: " + nome, "Espaço para a imagem do meme original"));
+
+        const depois = el("figure", "frame frame--after");
+        const capD = el("figcaption", null, "DEPOIS ");
+        capD.appendChild(el("small", null, "— NOSSA RELEITURA"));
+        depois.append(capD, imagem(t.imagemReleitura, "Releitura dos alunos: " + nome, "Espaço para a releitura dos alunos"));
+
+        const seta = el("span", "compare__arrow", "→");
+        seta.setAttribute("aria-hidden", "true");
+        wrap.append(antes, seta, depois);
+        return wrap;
+      }
+
+      function card(t, i) {
+        const c = el("article", "card");
+
+        const top = el("div", "card__top");
+        top.append(el("span", "card__num", numero(i)), el("span", "chip", "Releitura"));
+
+        const h = el("h3", "card__title", titulo(t, i));
+
+        const resumo = el("p", "card__excerpt");
+        if (valor(t.descricao)) resumo.textContent = valor(t.descricao);
+        else resumo.appendChild(el("span", "empty", "Descrição do meme a preencher."));
+
+        const meta = el("div", "card__meta");
+        const autores = el("span", "chip");
+        autores.appendChild(el("b", null, "Autores: "));
+        autores.appendChild(document.createTextNode(valor(t.autores) || A_PREENCHER));
+        meta.appendChild(autores);
+
+        const btn = el("button", "btn", "Ver trabalho completo ");
+        btn.type = "button";
+        btn.appendChild(el("span", null, "↗")).setAttribute("aria-hidden", "true");
+        btn.addEventListener("click", function () { abrir(t, i); });
+
+        c.append(top, h, comparacao(t, i), resumo, meta, btn);
+        return c;
+      }
+
+      function abrir(t, i) {
+        document.getElementById("modal-num").textContent = numero(i);
+        document.getElementById("modal-title").textContent = titulo(t, i);
+        document.getElementById("modal-compare").replaceWith(Object.assign(comparacao(t, i), { id: "modal-compare" }));
+
+        const desc = document.getElementById("modal-desc");
+        desc.replaceChildren();
+        campo(desc, t.descricao);
+
+        const info = document.getElementById("modal-info");
+        info.replaceChildren();
+        [
+          ["País de origem", t.pais],
+          ["Criador do meme original", t.criador],
+          ["Autores da releitura", t.autores],
+          ["Plataforma", t.plataforma],
+          ["Formato", "Releitura"],
+          ["Mídia", "Fotoblog Memoteca"]
+        ].forEach(function (par) {
+          info.append(el("dt", null, par[0]), campo(el("dd"), par[1]));
+        });
+
+        modal.showModal();
+      }
+
+      document.getElementById("modal-close").addEventListener("click", function () { modal.close(); });
+      modal.addEventListener("click", function (e) { if (e.target === modal) modal.close(); });
+
+      lista.forEach(function (t, i) { grid.appendChild(card(t, i)); });
+    })();
+  </script>
+</body>
+</html>
