@@ -20,14 +20,14 @@
 
 const TRABALHOS = [
   {
-    titulo: "",
-    imagemOriginal: "",   // ex.: "imagens/trabalho01-original.jpg"
-    imagemReleitura: "",  // ex.: "imagens/trabalho01-releitura.jpg"
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",          // ex.: "Nome 1, Nome 2, Nome 3"
-    plataforma: ""
+    titulo: "Olha a grana caindo do céu",
+    imagemOriginal: "imagens/trabalho01-original.jpg",
+    imagemReleitura: "imagens/trabalho01-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Ryan, Cauã, João Vitor",
+    plataforma: "TikTok"
   },
   {
     titulo: "",
