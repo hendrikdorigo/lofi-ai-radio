@@ -30,17 +30,14 @@ class Settings:
     demucs_4s_model: str = field(default_factory=lambda: _env("DEMUCS_4S_MODEL", "htdemucs"))
     demucs_6s_model: str = field(default_factory=lambda: _env("DEMUCS_6S_MODEL", "htdemucs_6s"))
 
-    # Modelos do audio-separator (RoFormer). Nomes conforme `audio-separator --list_models`.
-    # Vocal x instrumental de alta qualidade:
-    vocal_model: str = field(
-        default_factory=lambda: _env("VOCAL_MODEL", "model_bs_roformer_ep_317_sdr_12.9755.ckpt")
-    )
+    # Modelos do audio-separator. Nomes conforme `audio-separator --list_models`.
+    # "auto" escolhe pelo dispositivo: RoFormer (melhor qualidade) em GPU e MDX-Net
+    # (bem mais leve) em CPU. Medido em CPU, 20 s de áudio: BS-RoFormer 237 s x
+    # MDX-Net Voc_FT 21 s; Mel-RoFormer Karaokê ~130 s x MDX-Net Karaokê 2 28 s.
+    # Vocal x instrumental:
+    vocal_model: str = field(default_factory=lambda: _env("VOCAL_MODEL", "auto"))
     # Modelo "karaokê": separa voz principal (lead) do resto (backing vocals).
-    karaoke_model: str = field(
-        default_factory=lambda: _env(
-            "KARAOKE_MODEL", "mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt"
-        )
-    )
+    karaoke_model: str = field(default_factory=lambda: _env("KARAOKE_MODEL", "auto"))
     # Opcional: modelo específico de guitarra (ex.: um Mel-Band RoFormer de guitarra).
     # Vazio = usa a guitarra do Demucs. Quando definido, substitui o stem de guitarra.
     guitar_model: str = field(default_factory=lambda: _env("GUITAR_MODEL", ""))

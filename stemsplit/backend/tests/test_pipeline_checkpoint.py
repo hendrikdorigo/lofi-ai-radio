@@ -31,7 +31,7 @@ def test_detailed_resumes_from_checkpoints(tmp_path, monkeypatch):
     with pytest.raises(MemoryError):
         pipeline.separate(audio, "detalhado", cache_dir=cache)
     assert calls == {"rf": 1, "demucs": 1}
-    assert (cache / "1_voz" / "ok").exists()
+    assert any(cache.glob("1_voz_*/ok"))
 
     # Segunda tentativa: a etapa de voz vem do disco, não roda de novo.
     result = pipeline.separate(audio, "detalhado", cache_dir=cache)
@@ -39,3 +39,13 @@ def test_detailed_resumes_from_checkpoints(tmp_path, monkeypatch):
     assert "vocal_principal" in result.stems and "guitarra_solo" in result.stems
     total = sum(result.stems.values())
     assert np.max(np.abs(total - audio)) < 1e-3  # nada se perde entre as etapas
+
+
+def test_auto_models_follow_device(monkeypatch):
+    from stemsplit import device, pipeline
+
+    monkeypatch.setattr(device, "get_device", lambda: "cpu")
+    assert pipeline.resolve_model("vocal").endswith(".onnx")
+    assert "KARA" in pipeline.resolve_model("karaoke")
+    monkeypatch.setattr(device, "get_device", lambda: "cuda")
+    assert "roformer" in pipeline.resolve_model("vocal")

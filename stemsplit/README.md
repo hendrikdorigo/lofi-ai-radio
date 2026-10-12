@@ -92,10 +92,12 @@ música ──► BS-RoFormer ──► voz ───────► Mel-Band Ro
 | Modo | CPU 4 núcleos | GPU NVIDIA média |
 |---|---|---|
 | Rápido / Completo | 3 a 10 min | menos de 1 min |
-| Detalhado | **cerca de 1h30** (medido: ~12 s de CPU por segundo de música só no BS-RoFormer) | 2 a 5 min |
+| Detalhado | 30 min a 1 h (com os modelos MDX-Net, escolhidos automaticamente em CPU) | 2 a 5 min (com RoFormer) |
 
-Os números de CPU do modo Detalhado foram medidos num processador de 4 núcleos;
-os de GPU e do Demucs são estimativas — varia muito de máquina para máquina.
+Em CPU o app usa automaticamente modelos de voz MDX-Net, bem mais leves: medido em
+4 núcleos, 20 s de áudio levam 21 s (voz) e 28 s (voz principal × backing), contra
+237 s e ~130 s dos RoFormer. A qualidade é um pouco menor; com GPU o app usa os
+RoFormer. Os demais números são estimativas — varia muito de máquina para máquina.
 **Para o modo Detalhado, uma GPU NVIDIA faz enorme diferença.** Em Mac com
 Apple Silicon o PyTorch usa MPS automaticamente para o Demucs.
 
@@ -250,8 +252,8 @@ Duração: 352s  |  BPM: 128.0  |  Tom: Mi menor
 | `STEMSPLIT_DEVICE` | `auto` | `auto`, `cuda`, `mps` ou `cpu` |
 | `STEMSPLIT_DEMUCS_4S_MODEL` | `htdemucs` | Modelo do modo Rápido (ex.: `htdemucs_ft`, mais lento e melhor) |
 | `STEMSPLIT_DEMUCS_6S_MODEL` | `htdemucs_6s` | Modelo de 6 stems |
-| `STEMSPLIT_VOCAL_MODEL` | `model_bs_roformer_ep_317_sdr_12.9755.ckpt` | Voz × instrumental |
-| `STEMSPLIT_KARAOKE_MODEL` | `mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt` | Voz principal × backing |
+| `STEMSPLIT_VOCAL_MODEL` | `auto` | Voz × instrumental. `auto` = BS-RoFormer em GPU, `UVR-MDX-NET-Voc_FT.onnx` em CPU |
+| `STEMSPLIT_KARAOKE_MODEL` | `auto` | Voz principal × backing. `auto` = Mel-Band RoFormer Karaokê em GPU, `UVR_MDXNET_KARA_2.onnx` em CPU |
 | `STEMSPLIT_GUITAR_MODEL` | *(vazio)* | Modelo dedicado de guitarra do audio-separator, se você tiver um |
 | `STEMSPLIT_DRUM_MODEL` | *(vazio)* | Ex.: `MDX23C-DrumSep-aufr33-jarredou.ckpt` (bumbo/caixa/tons/pratos por IA, bem melhor que os filtros) |
 | `STEMSPLIT_ROFORMER_OVERLAP` | `auto` | Sobreposição dos blocos do RoFormer: `auto` = 8 em GPU, 2 em CPU |
@@ -343,8 +345,9 @@ stemsplit/
    resultados bem melhores.
 4. **Teclado/orquestra**: o Demucs só tem stem de *piano*; cordas, sintetizadores
    e orquestra costumam ir para "outros".
-5. **Desempenho em CPU**: o modo Detalhado leva cerca de 1h30 para uma música de
-   5 minutos num processador de 4 núcleos.
+5. **Desempenho em CPU**: no modo Detalhado o app troca os RoFormer pelos MDX-Net
+   (cerca de 10× mais rápidos, qualidade um pouco menor). Para forçar os RoFormer em
+   CPU, defina `STEMSPLIT_VOCAL_MODEL` e `STEMSPLIT_KARAOKE_MODEL` — fica muito lento.
 6. **Primeira execução precisa de internet** para baixar ~2 GB de modelos
    (Demucs do servidor da Meta; RoFormer de releases do GitHub). Depois, tudo
    funciona offline.

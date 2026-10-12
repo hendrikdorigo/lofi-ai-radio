@@ -127,14 +127,42 @@ def separate(
     return SeparationResult(stems=stems, warnings=warnings, seconds=time.time() - start)
 
 
+# Modelos de voz por dispositivo quando a configuração é "auto": (GPU, CPU).
+AUTO_MODELS = {
+    "vocal": ("model_bs_roformer_ep_317_sdr_12.9755.ckpt", "UVR-MDX-NET-Voc_FT.onnx"),
+    "karaoke": ("mel_band_roformer_karaoke_aufr33_viperx_sdr_10.1956.ckpt", "UVR_MDXNET_KARA_2.onnx"),
+}
+
+
+def resolve_model(kind: str) -> str:
+    """Nome do modelo de voz a usar: o configurado ou, em "auto", o adequado ao dispositivo."""
+    from .device import get_device
+
+    configured = settings.vocal_model if kind == "vocal" else settings.karaoke_model
+    if configured != "auto":
+        return configured
+    gpu_model, cpu_model = AUTO_MODELS[kind]
+    return gpu_model if get_device() in ("cuda", "mps") else cpu_model
+
+
+def _model_label(model: str) -> str:
+    name = model.lower()
+    if "roformer" in name:
+        return "BS-RoFormer" if "bs_roformer" in name else "Mel-Band RoFormer"
+    if "mdx" in name:
+        return "MDX-Net"
+    return model
+
+
 def _detailed(audio, split_drums, warnings, progress, cache_dir: Path | None) -> dict[str, np.ndarray]:
     from .separators import roformer_backend as rf
 
     sr = settings.sample_rate
+    vocal_model, karaoke_model = resolve_model("vocal"), resolve_model("karaoke")
     plan = [
-        ("Isolando a voz (BS-RoFormer)", 0.30),
+        (f"Isolando a voz ({_model_label(vocal_model)})", 0.30),
         ("Separando instrumentos (Demucs 6 stems)", 0.45),
-        ("Separando voz principal e backing vocals", 0.20),
+        (f"Separando voz principal e backing vocals ({_model_label(karaoke_model)})", 0.20),
     ]
     if settings.guitar_model:
         plan.append(("Refinando guitarra (modelo de guitarra)", 0.20))
@@ -150,10 +178,10 @@ def _detailed(audio, split_drums, warnings, progress, cache_dir: Path | None) ->
     p = st.next()
 
     def vocal_step():
-        r = _try_roformer(lambda: rf.split_two(audio, settings.vocal_model, "vocals", p), warnings, "Voz em alta qualidade")
+        r = _try_roformer(lambda: rf.split_two(audio, vocal_model, "vocals", p), warnings, "Voz em alta qualidade")
         return None if r is None else {"voz": r[0], "instrumental": r[1]}
 
-    vocal_split = _checkpoint(cache_dir, "1_voz", p, vocal_step)
+    vocal_split = _checkpoint(cache_dir, f"1_voz_{vocal_model}", p, vocal_step)
 
     # 2) Demucs 6 stems no instrumental (ou no mix, se o RoFormer falhou).
     p = st.next()
@@ -170,10 +198,10 @@ def _detailed(audio, split_drums, warnings, progress, cache_dir: Path | None) ->
     p = st.next()
 
     def lead_step():
-        r = _try_roformer(lambda: rf.split_two(vocals, settings.karaoke_model, "vocals", p), warnings, "Voz principal x backing")
+        r = _try_roformer(lambda: rf.split_two(vocals, karaoke_model, "vocals", p), warnings, "Voz principal x backing")
         return None if r is None else {"vocal_principal": r[0], "backing_vocals": r[1]}
 
-    lead_split = _checkpoint(cache_dir, "3_karaoke", p, lead_step)
+    lead_split = _checkpoint(cache_dir, f"3_karaoke_{karaoke_model}", p, lead_step)
     if lead_split is not None:
         stems.update(lead_split)
     else:
