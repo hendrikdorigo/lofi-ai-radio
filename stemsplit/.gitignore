@@ -1,0 +1,13 @@
+node_modules/
+frontend/dist/
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+# Dados gerados localmente (histórico, stems e modelos baixados)
+dados/
+modelos/
+backend/data/
+backend/models/
+*_stems/
+*.tsbuildinfo

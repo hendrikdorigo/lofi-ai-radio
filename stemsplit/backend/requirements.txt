@@ -1,0 +1,20 @@
+# PyTorch: instale ANTES, escolhendo CPU ou GPU (ver README).
+#   CPU:  pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cpu
+#   CUDA: pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1
+torchaudio==2.5.1
+
+# Separação
+demucs>=4.0.1
+audio-separator[cpu]>=0.30  # troque [cpu] por [gpu] se tiver placa NVIDIA
+
+# Áudio e análise
+numpy>=1.26
+scipy>=1.11
+soundfile>=0.12
+librosa>=0.10.2
+
+# API
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9

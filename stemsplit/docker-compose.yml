@@ -1,0 +1,42 @@
+# Uso:
+#   CPU (padrão):  docker compose up --build
+#   GPU NVIDIA:    docker compose --profile gpu up --build stemsplit-gpu
+# Depois abra http://localhost:8000
+#
+# Para GPU é preciso ter o driver NVIDIA e o NVIDIA Container Toolkit instalados.
+
+x-common: &common
+  ports:
+    - "127.0.0.1:8000:8000"   # só acessível deste computador (privacidade)
+  volumes:
+    - ./dados:/data           # histórico e stems
+    - ./modelos:/models       # cache dos modelos (baixados uma única vez)
+  environment:
+    - STEMSPLIT_MAX_UPLOAD_MB=200
+    # - STEMSPLIT_DRUM_MODEL=MDX23C-DrumSep-aufr33-jarredou.ckpt
+  restart: unless-stopped
+
+services:
+  stemsplit:
+    <<: *common
+    build:
+      context: .
+      args:
+        TORCH_VARIANT: cpu
+    image: stemsplit:cpu
+
+  stemsplit-gpu:
+    <<: *common
+    profiles: ["gpu"]
+    build:
+      context: .
+      args:
+        TORCH_VARIANT: cu121
+    image: stemsplit:gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
