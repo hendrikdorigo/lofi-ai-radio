@@ -60,14 +60,14 @@ const TRABALHOS = [
     plataforma: "TikTok"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "AAAH",
+    imagemOriginal: "imagens/trabalho05-original.jpg",
+    imagemReleitura: "imagens/trabalho05-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Rebeca, Lívia Melo",
+    plataforma: "TikTok, Instagram"
   },
   {
     titulo: "",
