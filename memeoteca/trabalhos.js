@@ -30,14 +30,14 @@ const TRABALHOS = [
     plataforma: "TikTok"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "Felca do Roblox",
+    imagemOriginal: "imagens/trabalho02-original.jpg",
+    imagemReleitura: "imagens/trabalho02-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Guilherme, Isabeli",
+    plataforma: "TikTok, Roblox"
   },
   {
     titulo: "",
