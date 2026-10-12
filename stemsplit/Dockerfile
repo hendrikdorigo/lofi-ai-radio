@@ -23,8 +23,9 @@ ENV PYTHONUNBUFFERED=1 \
     STEMSPLIT_FRONTEND_DIR=/app/frontend/dist
 
 # ffmpeg do Debian já vem com rubberband (transposição de tom de boa qualidade).
+# build-essential (gcc): o pacote diffq, dependência do audio-separator, é compilado na instalação.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ffmpeg libsndfile1 \
+ && apt-get install -y --no-install-recommends ffmpeg libsndfile1 build-essential \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/backend
