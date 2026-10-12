@@ -70,13 +70,13 @@ const TRABALHOS = [
     plataforma: "TikTok, Instagram"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "Farmando Aura",
+    imagemOriginal: "imagens/trabalho06-original.jpg",
+    imagemReleitura: "imagens/trabalho06-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "João Pedro, Murilo, Enzo Alencar",
+    plataforma: "TikTok"
   }
 ];
