@@ -80,54 +80,105 @@ def _center_similarity(spec: np.ndarray) -> np.ndarray:
     return np.clip(cross_s.real / np.sqrt(p_l * p_r + 1e-12), 0.0, 1.0)
 
 
-def _melody_mask(center: np.ndarray, freqs: np.ndarray, sr: int, n_frames: int) -> np.ndarray:
-    """Máscara com os harmônicos da melodia principal (o solo) no sinal central.
+# Faixa de notas considerada para melodias de guitarra (Ré#3 a ~Fá6).
+F0_MIN, F0_MAX = 150.0, 1400.0
+_CANDIDATES = F0_MIN * 2 ** (np.arange(int(72 * np.log2(F0_MAX / F0_MIN)) + 1) / 72)  # 1/6 de semitom
 
-    Rastreia a nota mais forte quadro a quadro (pYIN) e marca a frequência
-    fundamental e seus harmônicos. Só vale nos trechos em que essa melodia
-    domina o som do centro — assim o topo dos acordes da base não vira "solo"
-    nos trechos sem solo.
+
+def _salience(logmag: np.ndarray, freqs: np.ndarray) -> np.ndarray:
+    """Força de cada nota candidata em cada quadro: soma (ponderada) dos seus 8 harmônicos.
+
+    Mais robusta que o pYIN quando há acordes por baixo (medido em teste
+    sintético: 100% x 70% de notas certas).
     """
-    import librosa
+    from scipy.ndimage import maximum_filter1d
 
-    from scipy.signal import butter, sosfiltfilt
+    spread = maximum_filter1d(logmag, size=3, axis=0)  # tolera ±1 bin de desafinação
+    bin_hz = freqs[1]
+    sal = np.zeros((len(_CANDIDATES), logmag.shape[1]), dtype=np.float32)
+    for h in range(1, 9):
+        bins = np.round(h * _CANDIDATES / bin_hz).astype(int)
+        ok = bins < len(freqs)
+        sal[ok] += (0.84 ** (h - 1)) * spread[bins[ok]]
+    return sal
 
-    target_sr = 22050  # com hop 512 a 22.05 kHz, cada quadro do pYIN = um quadro do STFT
-    # Tira os graves antes de detectar as notas: os acordes da base confundem o
-    # pYIN (medido: 70% de acerto sem filtro x 98% com filtro em 220 Hz).
-    highpass = butter(4, 220.0, "highpass", fs=sr, output="sos")
-    mono = librosa.resample(sosfiltfilt(highpass, center.mean(axis=0)), orig_sr=sr, target_sr=target_sr)
-    f0, _, voiced_prob = librosa.pyin(
-        mono, fmin=150.0, fmax=1400.0, sr=target_sr, frame_length=2048, hop_length=HOP * target_sr // sr,
-        fill_na=np.nan,
-    )
-    t = min(n_frames, len(f0))
-    f0 = np.nan_to_num(f0[:t], nan=0.0).astype(np.float32)
-    voiced = np.nan_to_num(voiced_prob[:t]).astype(np.float32)
 
-    mask = np.zeros((len(freqs), n_frames), dtype=np.float32)
+def _harmonic_mask(freqs: np.ndarray, f0: np.ndarray) -> np.ndarray:
+    """Máscara (bins x quadros) com a fundamental e os harmônicos de ``f0`` (0 = sem nota)."""
     active = f0 > 0
-    if not active.any():
-        return mask
     f = freqs[:, None]
     f0_safe = np.where(active, f0, 1.0)[None, :]
     k = np.maximum(1.0, np.round(f / f0_safe))  # harmônico mais próximo de cada bin
     dist = np.abs(f - k * f0_safe)
     sigma = np.maximum(15.0, 0.02 * k * f0_safe)  # tolera vibrato e bends
-    harmonic = np.exp(-0.5 * (dist / sigma) ** 2) * (f >= 0.8 * f0_safe)
-    mask[:, :t] = harmonic * (active * voiced)[None, :]
-    return mask
+    mask = np.exp(-0.5 * (dist / sigma) ** 2) * (f >= 0.8 * f0_safe)
+    return (mask * active[None, :]).astype(np.float32)
+
+
+def _smooth_track(f0: np.ndarray) -> np.ndarray:
+    """Remove saltos isolados de um quadro (mediana de 5 quadros, em escala de semitons)."""
+    from scipy.signal import medfilt
+
+    log = np.where(f0 > 0, np.log2(np.maximum(f0, 1e-6)), 0.0)
+    smooth = medfilt(log, 5)
+    return np.where((f0 > 0) & (smooth > 0), 2 ** smooth, 0.0)
+
+
+def _related(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """True quando ``b`` é oitava/harmônico de ``a`` (eco da mesma nota, não outra voz)."""
+    ratio = np.log2(np.maximum(b, 1e-6) / np.maximum(a, 1e-6))
+    hits = np.zeros_like(ratio, dtype=bool)
+    for r in (-2.0, -1.0, 0.0, 1.0, 2.0, np.log2(3), -np.log2(3)):
+        hits |= np.abs(ratio - r) * 1200 < 60
+    return hits
+
+
+def _log_magnitude(mag: np.ndarray, freqs: np.ndarray) -> np.ndarray:
+    mag = mag * (freqs >= 200.0)[:, None]  # graves: território da base
+    return np.log1p(mag / (mag.max() + 1e-9) * 1000).astype(np.float32)
+
+
+def _presence(peak: np.ndarray, start: float = 1.5, end: float = 4.0) -> np.ndarray:
+    """0..1 por quadro: quanto a nota detectada se destaca do "fundo" da região.
+
+    O fundo é o percentil 20 da força ao longo da música (os trechos só com
+    base); um solo entrando eleva a força bem acima dele. Média de ~0,3 s.
+    """
+    smooth = uniform_filter1d(peak, size=13)
+    return _ramp(smooth - np.percentile(smooth, 20), start, end)
+
+
+def _region_melodies(mag: np.ndarray, freqs: np.ndarray, voices: int) -> list[tuple[np.ndarray, np.ndarray]]:
+    """Até ``voices`` melodias simultâneas numa região: lista de (f0 por quadro, presença 0..1).
+
+    Acha a nota mais forte; depois apaga os harmônicos dela e procura outra
+    nota forte que não seja oitava/harmônico da primeira (a 2ª voz do dueto).
+    """
+    logmag = _log_magnitude(mag, freqs)
+    sal1 = _salience(logmag, freqs)
+    f0a, peak_a = _CANDIDATES[sal1.argmax(axis=0)], sal1.max(axis=0)
+    lines = [(_smooth_track(f0a), _presence(peak_a))]
+    if voices > 1:
+        sal2 = _salience(logmag * (1.0 - _harmonic_mask(freqs, f0a)), freqs)
+        f0b, peak_b = _CANDIDATES[sal2.argmax(axis=0)], sal2.max(axis=0)
+        valid = (peak_b > 0.55 * peak_a) & ~_related(f0a, f0b)
+        lines.append((_smooth_track(np.where(valid, f0b, 0.0)), _presence(peak_b) * valid))
+    return lines
 
 
 def split_guitar(audio: np.ndarray, sr: int, progress: ProgressFn = no_progress) -> dict[str, np.ndarray]:
-    """Divide o stem de guitarra em guitarra_1/2 (lados) e solo/base (centro).
+    """Divide o stem de guitarra em solo, dueto (2ª voz) e base esquerda/direita/centro.
 
-    1. Fase + panorama separam o que é *uma* fonte no centro do que é
-       diferente em cada lado (bases dobradas, guitarras abertas em L/R).
-       O que não é centro vai, canal por canal, para Guitarra 1 (esquerda) e
-       Guitarra 2 (direita).
-    2. No centro, a melodia principal é rastreada; seus harmônicos viram
-       "Guitarra solo" e o resto (acordes, graves) vira "Guitarra base".
+    1. Separa as regiões do estéreo pela fase entre os canais: *uma* fonte no
+       centro x o que é diferente em cada lado (bases dobradas, duetos abertos).
+    2. Procura melodias em cada região: até duas no centro (dueto/harmonia no
+       centro) e uma em cada lado (dueto aberto em L/R, como é comum no metal).
+       Procurar por região evita que os acordes da base, que vêm dos lados,
+       atrapalhem a detecção no centro (medido: 1-59% x 75-100% de notas certas).
+    3. Em cada instante, a melodia ativa mais aguda vira "Guitarra solo" e a
+       segunda, "Guitarra dueto" — cada uma na sua posição original no estéreo.
+    4. O que sobra é base: "Base centro", "Base esquerda" e "Base direita".
+    As partes somadas reconstroem a entrada.
     """
     n = audio.shape[1]
     freqs, spec = _stft(audio, sr)
@@ -135,31 +186,50 @@ def split_guitar(audio: np.ndarray, sr: int, progress: ProgressFn = no_progress)
 
     mag_l, mag_r = np.abs(spec[0]), np.abs(spec[1])
     pan = uniform_filter((mag_r - mag_l) / (mag_r + mag_l + 1e-9), size=(3, 5))
-    similarity = _center_similarity(spec)
-    w_center = (_ramp(similarity, 0.5, 0.85) * (1.0 - _ramp(np.abs(pan), 0.35, 0.75))).astype(np.float32)
+    w_center = _ramp(_center_similarity(spec), 0.5, 0.85) * (1.0 - _ramp(np.abs(pan), 0.35, 0.75))
+    zeros = np.zeros_like(spec[0])
     center = spec * w_center
     sides = spec - center
+    regions = {
+        "centro": center,
+        "esquerda": np.stack([sides[0], zeros]),
+        "direita": np.stack([zeros, sides[1]]),
+    }
     progress(0.3)
 
-    center_audio = _istft(center, sr, n)
-    melody = _melody_mask(center_audio, freqs, sr, spec.shape[-1])
-    progress(0.8)
+    lowcut = _ramp(freqs, 120.0, 180.0)[:, None]
+    lines = []  # (região, f0, máscara)
+    for name, region in regions.items():
+        mag = np.abs(region).sum(axis=0)
+        found = _region_melodies(mag, freqs, voices=2 if name == "centro" else 1)
+        masks = [_harmonic_mask(freqs, f0) * gate[None, :] * lowcut for f0, gate in found]
+        total = np.maximum(1.0, sum(masks))  # 2 vozes na mesma região dividem a energia
+        for (f0, gate), mask in zip(found, masks):
+            lines.append((name, np.where(gate > 0.5, f0, 0.0), mask / total))
+    progress(0.7)
 
-    # Só conta como solo onde a melodia carrega boa parte da energia do centro
-    # acima de 250 Hz (média de ~0,3 s) — abaixo disso a base domina e
-    # mascararia o solo. E nunca abaixo de ~150 Hz (graves são da base).
-    energy = (np.abs(center[0]) ** 2 + np.abs(center[1]) ** 2) * (freqs >= 250.0)[:, None]
-    share = (energy * melody).sum(axis=0) / (energy.sum(axis=0) + 1e-9)
-    gate = _ramp(uniform_filter1d(share, size=13), 0.12, 0.3)
-    w_solo = melody * gate[None, :] * _ramp(freqs, 120.0, 180.0)[:, None]
-    solo = center * w_solo
+    # Em cada quadro: a melodia ativa mais aguda é o solo; a segunda, o dueto.
+    pitches = np.stack([f0 for _, f0, _ in lines])  # linhas x quadros
+    order = np.argsort(-pitches, axis=0)
+    rank = np.empty_like(order)
+    np.put_along_axis(rank, order, np.arange(len(lines))[:, None].repeat(pitches.shape[1], 1), axis=0)
+    solo = np.zeros_like(spec)
+    duet = np.zeros_like(spec)
+    leads = {name: np.zeros_like(spec) for name in regions}
+    for i, (name, f0, mask) in enumerate(lines):
+        part = regions[name] * mask
+        is_solo = ((rank[i] == 0) & (f0 > 0))[None, None, :]
+        is_duet = ((rank[i] == 1) & (f0 > 0))[None, None, :]
+        solo += part * is_solo
+        duet += part * is_duet
+        leads[name] += part * (is_solo | is_duet)
 
-    zeros = np.zeros_like(sides[0])
     out = {
-        "guitarra_1": _istft(np.stack([sides[0], zeros]), sr, n),
-        "guitarra_2": _istft(np.stack([zeros, sides[1]]), sr, n),
         "guitarra_solo": _istft(solo, sr, n),
-        "guitarra_base": _istft(center - solo, sr, n),
+        "guitarra_dueto": _istft(duet, sr, n),
+        "guitarra_base": _istft(regions["centro"] - leads["centro"], sr, n),
+        "guitarra_1": _istft(regions["esquerda"] - leads["esquerda"], sr, n),
+        "guitarra_2": _istft(regions["direita"] - leads["direita"], sr, n),
     }
     progress(1.0)
     return out

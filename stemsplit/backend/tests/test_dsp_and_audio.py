@@ -9,24 +9,51 @@ def _energy(x: np.ndarray) -> float:
     return float(np.mean(x**2))
 
 
+GUITAR_KEYS = {"guitarra_1", "guitarra_2", "guitarra_solo", "guitarra_dueto", "guitarra_base"}
+
+
 def test_split_guitar_reconstructs_input(song):
     parts = dsp.split_guitar(song, SR)
-    assert set(parts) == {"guitarra_1", "guitarra_2", "guitarra_solo", "guitarra_base"}
+    assert set(parts) == GUITAR_KEYS
     total = sum(parts.values())
     # As máscaras somam 1: a soma das partes reconstrói o stem original.
     assert np.max(np.abs(total - song)) < 1e-3
 
 
-def test_split_guitar_routes_by_panning():
-    # Nota só no canal esquerdo → Guitarra 1.
-    left_only = np.stack([tone(220), np.zeros(SR * 2, np.float32)])
-    p = dsp.split_guitar(left_only, SR)
-    assert _energy(p["guitarra_1"]) > 0.9 * _energy(left_only)
-    # Nota aguda sustentada no centro → guitarra solo.
-    center = np.stack([tone(880), tone(880)])
-    p = dsp.split_guitar(center, SR)
-    assert _energy(p["guitarra_solo"]) > 0.7 * _energy(center)
-    assert _energy(p["guitarra_1"]) < 0.01 * _energy(center)
+def _chords(seconds: float = 6.0) -> np.ndarray:
+    """Base sintética: power chords graves e distorcidos (o "fundo" da música)."""
+    t = np.arange(int(SR * seconds)) / SR
+    x = np.tanh(3 * (np.sin(2 * np.pi * 82.4 * t) + np.sin(2 * np.pi * 123.5 * t)))
+    return (0.2 * x).astype(np.float32)
+
+
+def _with_melody_after(base: np.ndarray, freq: float, start: float) -> np.ndarray:
+    """Acrescenta uma nota de guitarra (timbre rico em harmônicos) a partir de ``start``."""
+    t = np.arange(base.size) / SR
+    note = sum(np.sin(2 * np.pi * k * freq * t) / k for k in range(1, 9))
+    return (base + 0.2 * np.tanh(2 * note) * (t > start)).astype(np.float32)
+
+
+def _band_energy(x: np.ndarray, freq: float) -> float:
+    spectrum = np.abs(np.fft.rfft(x.mean(axis=0)))
+    freqs = np.fft.rfftfreq(x.shape[1], 1 / SR)
+    return float(spectrum[np.abs(freqs - freq) < 5].sum() ** 2)
+
+
+def test_split_guitar_center_duet_goes_to_solo_and_duet():
+    base = _chords()
+    mono = _with_melody_after(_with_melody_after(base, 880.0, 2.0), 698.5, 2.0)  # terça maior
+    p = dsp.split_guitar(np.stack([mono, mono]), SR)
+    assert _band_energy(p["guitarra_solo"], 880.0) > 5 * _band_energy(p["guitarra_dueto"], 880.0)
+    assert _band_energy(p["guitarra_dueto"], 698.5) > 5 * _band_energy(p["guitarra_solo"], 698.5)
+
+
+def test_split_guitar_keeps_sides_in_their_channel():
+    left = _with_melody_after(_chords(), 880.0, 2.0)
+    p = dsp.split_guitar(np.stack([left, np.zeros_like(left)]), SR)
+    for name, part in p.items():
+        assert _energy(part[1:]) < 1e-6 * _energy(left), name  # nada vaza para a direita
+    assert _band_energy(p["guitarra_solo"], 880.0) > _band_energy(p["guitarra_1"], 880.0)
 
 
 def test_split_drums_bands():

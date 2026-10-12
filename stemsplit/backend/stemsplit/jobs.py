@@ -307,7 +307,8 @@ def save_stems(job_dir: Path, stems: dict) -> None:
     peaks_file.write_text(json.dumps(peaks), encoding="utf-8")
 
 
-GUITAR_PARTS = ("guitarra_1", "guitarra_2", "guitarra_solo", "guitarra_base")
+GUITAR_PARTS = ("guitarra_1", "guitarra_2", "guitarra_solo", "guitarra_base", "guitarra_dueto")
+_REQUIRED_GUITAR = {"guitarra_1", "guitarra_2", "guitarra_solo", "guitarra_base"}  # músicas antigas não têm dueto
 _resplit_lock = threading.Lock()
 
 
@@ -320,19 +321,22 @@ def resplit_guitars(job: Job) -> Job:
     """
     from .separators import dsp
 
-    if job.status != "concluido" or not set(GUITAR_PARTS) <= set(job.stem_names()):
+    if job.status != "concluido" or not _REQUIRED_GUITAR <= set(job.stem_names()):
         raise ValueError("Só dá para refazer as guitarras de uma música já processada no modo Detalhado.")
     if not _resplit_lock.acquire(blocking=False):
         raise ValueError("Já existe uma divisão de guitarras em andamento. Aguarde terminar.")
     try:
         stems_dir = job.dir / "stems"
-        guitar = sum(audio_io.read_wav(stems_dir / f"{name}.wav") for name in GUITAR_PARTS)
+        existing = [name for name in GUITAR_PARTS if (stems_dir / f"{name}.wav").exists()]
+        guitar = sum(audio_io.read_wav(stems_dir / f"{name}.wav") for name in existing)
         parts = dsp.split_guitar(guitar, settings.sample_rate)
         # Downloads e prévias transpostas antigos ficam inválidos.
         shutil.rmtree(job.dir / "exports", ignore_errors=True)
         for old in (job.dir / "previews").glob("guitarra_*"):
             old.unlink(missing_ok=True)
         save_stems(job.dir, parts)
+        names = job.stem_names() + [name for name in parts if name not in job.stem_names()]
+        job.stems = stem_catalog.describe(names)
         job.revision += 1
         manager._touch(job, persist=True)
         return job

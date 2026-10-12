@@ -65,19 +65,21 @@ música ──► BS-RoFormer ──► voz ───────► Mel-Band Ro
                                                                              └─► guitarra base (centro, percussiva/grave)
 ```
 
-- **Guitarra 1 / 2**: uma guitarra no centro chega aos dois canais com a mesma
-  fase; uma base gravada duas vezes (uma tomada de cada lado, como no metal e no
-  hard rock) nunca chega — as tomadas têm pequenas diferenças de tempo. O app
-  mede essa diferença de fase (não só o volume) e manda o que é diferente em cada
-  lado para Guitarra 1 (esquerda) e Guitarra 2 (direita). Duetos em harmonia
-  abertos em L/R também caem aqui.
-- **Solo × base**: no que sobra no centro, o app rastreia a melodia principal nota
-  a nota (pYIN, com os graves filtrados para os acordes não atrapalharem) e
-  extrai os harmônicos dela como "Guitarra solo"; o resto (acordes, graves) é a
-  "Guitarra base".
-- Num teste sintético com base dobrada + solo no centro: o solo foi de 7,1 para
-  8,1 dB de SDR em relação à versão anterior (HPSS), e a base dobrada passou a ir
-  para Guitarra 1/2 (6,3 dB, antes 0 dB).
+- **Regiões do estéreo**: uma guitarra no centro chega aos dois canais com a mesma
+  fase; uma base gravada duas vezes (uma tomada de cada lado) nunca chega. O app
+  usa essa diferença de fase (não só o volume) para separar centro, esquerda e
+  direita.
+- **Solo e dueto**: em cada região o app procura melodias somando os harmônicos de
+  cada nota candidata — até duas ao mesmo tempo no centro (dueto/harmonia no
+  centro) e uma em cada lado (dueto aberto em L/R, comum no metal, como nos duetos
+  do Avenged Sevenfold). Em cada instante, a melodia mais aguda vai para
+  **Guitarra solo** e a segunda para **Guitarra dueto (2ª voz)**, cada uma na sua
+  posição original no estéreo. Procurar por região importa: na guitarra inteira os
+  acordes da base, que vêm dos lados, confundem a detecção.
+- **Base**: o resto vai para **Base centro**, **Base esquerda** e **Base direita**.
+- Medido em músicas sintéticas (base dobrada em L/R + solos), SDR antes → agora:
+  dueto no centro: solo 1,3 → 7,1 dB e 2ª voz 0 → 8,6 dB; dueto em L/R: solo
+  −0,2 → 3,7 dB e 2ª voz 0 → 4,8 dB; solo simples: 7,0 → 12,0 dB.
 - Músicas já processadas podem usar o algoritmo novo pelo botão **Refazer
   separação das guitarras** — leva minutos, não refaz o resto.
 - As 4 partes de guitarra **somam exatamente** o stem de guitarra original — nada
@@ -346,8 +348,10 @@ stemsplit/
    divisão usa a posição no estéreo e o caráter do som:
    - funciona melhor com base dobrada/aberta em L/R e solo no centro (muito comum
      no rock e no metal);
-   - quando solo e base tocam notas que coincidem, parte do solo fica na base
-     (no teste sintético, ~30% da energia do solo) e vice-versa;
+   - quando solo e base tocam notas que coincidem, parte do solo fica na base e
+     vice-versa; duetos abertos em L/R ainda se separam pior que duetos no centro;
+   - "solo" e "dueto" são definidos pela altura (a voz mais aguda é o solo), não
+     por guitarrista — se as vozes se cruzarem, trocam de stem naquele trecho;
    - duas guitarras na mesma posição do estéreo tocando acordes (ou gravações
      mono) não se separam; solos com dois guitarristas no centro ao mesmo tempo
      também não.

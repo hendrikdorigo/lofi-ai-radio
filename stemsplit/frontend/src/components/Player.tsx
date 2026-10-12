@@ -90,8 +90,10 @@ export function Player({ job, health, onJobChange }: Props) {
     const add = (label: string, mute: string[]) => mute.length && list.push({ label, mute });
     add("Karaokê (sem voz)", byGroup("voz"));
     add("Sem voz principal", names.filter((n) => n === "vocal_principal"));
+    const leads = names.filter((n) => n === "guitarra_solo" || n === "guitarra_dueto");
     add("Sem guitarra solo", names.filter((n) => n === "guitarra_solo"));
-    add("Sem guitarra base", names.filter((n) => n === "guitarra_base"));
+    if (names.includes("guitarra_dueto")) add("Sem solo e dueto", leads);
+    add("Sem guitarra base", names.filter((n) => ["guitarra_base", "guitarra_1", "guitarra_2"].includes(n)));
     add("Sem guitarras", byGroup("guitarra"));
     add("Sem baixo", byGroup("baixo"));
     add("Sem bateria", byGroup("bateria"));

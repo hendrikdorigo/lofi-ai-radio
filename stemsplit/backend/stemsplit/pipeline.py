@@ -6,7 +6,7 @@ Detalhado  → 1) RoFormer separa voz x instrumental (melhor qualidade de voz)
              2) Demucs 6s no instrumental: bateria, baixo, guitarra, teclado, outros
              3) RoFormer "karaokê" na voz: voz principal x backing vocals
              4) (opcional) modelo específico de guitarra
-             5) DSP na guitarra: guitarra 1/2 (L/R), solo e base (centro)
+             5) DSP na guitarra: solo, dueto (2ª voz) e base esquerda/direita/centro
              6) (opcional) bateria em bumbo, caixa e pratos
 
 Se algum modelo RoFormer não estiver disponível, o pipeline continua com o
@@ -41,10 +41,10 @@ MODES = {
     },
     "detalhado": {
         "label": "Detalhado",
-        "description": "Voz principal x backing vocals, guitarra solo/base e guitarra 1/2. "
+        "description": "Voz principal x backing vocals, guitarra solo, dueto e base. "
         "Bem mais lento e a separação fina das guitarras é uma estimativa.",
         "stems": [
-            "vocal_principal", "backing_vocals", "guitarra_solo", "guitarra_base",
+            "vocal_principal", "backing_vocals", "guitarra_solo", "guitarra_dueto", "guitarra_base",
             "guitarra_1", "guitarra_2", "baixo", "bateria", "teclado", "outros",
         ],
     },
@@ -190,7 +190,7 @@ def _detailed(audio, split_drums, warnings, progress, cache_dir: Path | None, vo
     ]
     if settings.guitar_model:
         plan.append(("Refinando guitarra (modelo de guitarra)", 0.20))
-    plan.append(("Dividindo guitarras (solo/base, esquerda/direita)", 0.05))
+    plan.append(("Dividindo guitarras (solo, dueto e base)", 0.05))
     if split_drums:
         plan.append((DRUM_STAGE, 0.05))
     st = _Stages(plan, progress)
@@ -245,7 +245,7 @@ def _detailed(audio, split_drums, warnings, progress, cache_dir: Path | None, vo
     p = st.next()
     guitar = stems.pop("guitarra")
     if dsp.stereo_width(guitar) < 0.02:
-        warnings.append("A guitarra está praticamente em mono: Guitarra 1 e 2 devem sair quase vazias.")
+        warnings.append("A guitarra está praticamente em mono: Base esquerda e direita devem sair quase vazias.")
     stems.update(dsp.split_guitar(guitar, sr, p))
 
     # 6) Bateria em bumbo, caixa e pratos (opcional).
