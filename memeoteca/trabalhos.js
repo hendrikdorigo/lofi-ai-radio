@@ -1,6 +1,6 @@
 /*
   ==========================================================
-  MEMOTECA — LISTA DE TRABALHOS
+  MEMEOTECA — LISTA DE TRABALHOS
   ==========================================================
   Este é o ÚNICO arquivo que você precisa editar para
   colocar os trabalhos da turma no site.

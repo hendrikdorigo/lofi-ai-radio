@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MEMOTECA — Fotoblog de Releituras de Memes Escolares</title>
+  <title>MEMEOTECA — Fotoblog de Releituras de Memes Escolares</title>
   <meta name="description" content="Museu de Releituras de Memes Escolares: exposição digital das releituras de memes produzidas pelos alunos.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -86,12 +86,27 @@
       letter-spacing: .08em; text-transform: uppercase;
       padding: 6px 14px; border-radius: 999px;
     }
+    .badges { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .school {
+      display: inline-block;
+      font-family: var(--display); font-weight: 800;
+      font-size: 22px; line-height: 1; letter-spacing: .14em;
+      color: var(--yellow); background: var(--ink);
+      padding: 9px 14px 9px 18px; border-radius: 10px;
+      box-shadow: 4px 4px 0 var(--purple);
+      transform: rotate(-3deg);
+    }
+    .mini-school {
+      font-family: var(--display); font-weight: 800; font-size: 11px; letter-spacing: .1em;
+      background: var(--yellow); color: var(--ink);
+      padding: 2px 7px; border-radius: 5px; margin-left: 4px; vertical-align: 2px;
+    }
     .tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--purple); }
 
     .logo {
       font-family: var(--display);
       font-weight: 800;
-      font-size: clamp(56px, 11vw, 132px);
+      font-size: clamp(50px, 10vw, 118px);
       line-height: .88;
       letter-spacing: -.045em;
       margin: 20px 0 14px;
@@ -348,8 +363,10 @@
       letter-spacing: -.02em; margin: 0;
     }
     footer .foot-logo span { color: var(--yellow); }
+    footer .foot-school { margin: 18px 0 0; font-size: 16px; color: #d8d3e2; }
+    footer .foot-school .school { font-size: 16px; color: var(--ink); background: var(--yellow); box-shadow: 3px 3px 0 var(--purple); margin-left: 6px; padding: 6px 10px 6px 13px; }
     footer .foot-quote {
-      margin: 14px auto 0; max-width: 46ch;
+      margin: 14px auto 0; max-width: 56ch;
       font-size: 18px; color: #d8d3e2; font-style: italic;
     }
     footer .foot-dots { margin-top: 26px; display: flex; justify-content: center; gap: 8px; }
@@ -382,19 +399,22 @@
 
   <div class="topbar" aria-hidden="true">
     <div class="topbar__track">
-      <span>Exposição digital</span><span>Releituras de memes</span><span>Cotidiano escolar</span><span>Cultura digital</span><span>Criatividade</span><span>Fotoblog</span>
-      <span>Exposição digital</span><span>Releituras de memes</span><span>Cotidiano escolar</span><span>Cultura digital</span><span>Criatividade</span><span>Fotoblog</span>
+      <span>Exposição digital</span><span>Releituras de memes</span><span>Cotidiano escolar</span><span>Cultura digital</span><span>Criatividade</span><span>Fotoblog</span><span>IMSIL</span>
+      <span>Exposição digital</span><span>Releituras de memes</span><span>Cotidiano escolar</span><span>Cultura digital</span><span>Criatividade</span><span>Fotoblog</span><span>IMSIL</span>
     </div>
   </div>
 
   <header class="hero">
     <div class="wrap hero__inner">
       <div>
-        <span class="tag">Fotoblog · Exposição da turma</span>
-        <h1 class="logo"><span>MEMO</span>TECA</h1>
+        <div class="badges">
+          <span class="school" title="Sigla da escola">IMSIL</span>
+          <span class="tag">Fotoblog · Exposição da turma</span>
+        </div>
+        <h1 class="logo"><span>MEME</span>OTECA</h1>
         <p class="subtitle">Museu de Releituras de Memes Escolares.</p>
         <p class="intro">
-          A Memoteca é um fotoblog criado para compartilhar as releituras de memes produzidas pelos alunos.
+          A Memeoteca é um fotoblog criado para compartilhar as releituras de memes produzidas pelos alunos.
           A partir de memes da internet, os estudantes criaram novas versões inspiradas em situações do
           cotidiano escolar, unindo criatividade, interpretação e cultura digital.
         </p>
@@ -406,8 +426,8 @@
         <div class="quote-card__head">
           <div class="avatar" aria-hidden="true">M</div>
           <div>
-            <div class="quote-card__name">Memoteca</div>
-            <div class="quote-card__handle">@memoteca.escolar</div>
+            <div class="quote-card__name">Memeoteca <span class="mini-school">IMSIL</span></div>
+            <div class="quote-card__handle">@memeoteca.imsil</div>
           </div>
         </div>
         <blockquote>“Do meme original à <em>criatividade</em> na escola.”</blockquote>
@@ -442,7 +462,8 @@
 
   <footer>
     <div class="wrap">
-      <p class="foot-logo"><span>MEMOTECA</span> — Fotoblog de Releituras de Memes Escolares</p>
+      <p class="foot-logo"><span>MEMEOTECA</span> — Fotoblog de Releituras de Memes Escolares</p>
+      <p class="foot-school">Uma exposição dos estudantes do <span class="school">IMSIL</span></p>
       <p class="foot-quote">“Cada meme tem uma história. Cada releitura revela um novo olhar.”</p>
       <div class="foot-dots" aria-hidden="true">
         <i style="background:var(--yellow)"></i><i style="background:var(--purple)"></i><i style="background:#fff"></i>
@@ -583,7 +604,7 @@
           ["Autores da releitura", t.autores],
           ["Plataforma", t.plataforma],
           ["Formato", "Releitura"],
-          ["Mídia", "Fotoblog Memoteca"]
+          ["Mídia", "Fotoblog Memeoteca"]
         ].forEach(function (par) {
           info.append(el("dt", null, par[0]), campo(el("dd"), par[1]));
         });

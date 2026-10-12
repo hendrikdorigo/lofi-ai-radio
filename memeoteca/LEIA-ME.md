@@ -1,4 +1,4 @@
-# MEMOTECA — Fotoblog de Releituras de Memes Escolares
+# MEMEOTECA — Fotoblog de Releituras de Memes Escolares
 
 Site estático (sem servidor, sem banco de dados). Basta abrir `index.html` no navegador.
 
@@ -8,8 +8,8 @@ Site estático (sem servidor, sem banco de dados). Basta abrir `index.html` no n
 2. Abra `trabalhos.js` e preencha os campos de cada trabalho (título, imagens, descrição, país, criador, autores, plataforma).
 3. Para mais trabalhos, copie um bloco `{ ... },` inteiro e cole abaixo. Para menos, apague blocos.
 
-Campos vazios aparecem como “A preencher”. “Formato: Releitura” e “Mídia: Fotoblog Memoteca” já são fixos.
+Campos vazios aparecem como “A preencher”. “Formato: Releitura” e “Mídia: Fotoblog Memeoteca” já são fixos.
 
 ## Publicar
 
-Pode ser hospedado de graça no GitHub Pages, Netlify ou Vercel enviando a pasta `memoteca/` inteira.
+Pode ser hospedado de graça no GitHub Pages, Netlify ou Vercel enviando a pasta `memeoteca/` inteira.
