@@ -16,11 +16,13 @@ melhor resultado possível e registra um aviso (em vez de falhar).
 from __future__ import annotations
 
 import time
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Callable
 
 import numpy as np
 
+from . import audio_io
 from .config import settings
 from .separators import demucs_backend, dsp
 
@@ -101,7 +103,9 @@ def separate(
     mode: str = "completo",
     split_drums: bool = False,
     progress: StageProgress = lambda *_: None,
+    cache_dir: Path | None = None,
 ) -> SeparationResult:
+    """Separa ``audio`` no modo pedido. ``cache_dir`` guarda etapas intermediárias (modo Detalhado)."""
     if mode not in MODES:
         raise ValueError(f"Modo inválido: {mode}. Use: {', '.join(MODES)}")
     start = time.time()
@@ -109,7 +113,7 @@ def separate(
     warnings: list[str] = []
 
     if mode == "detalhado":
-        stems = _detailed(audio, split_drums, warnings, progress)
+        stems = _detailed(audio, split_drums, warnings, progress, cache_dir)
     else:
         model = settings.demucs_4s_model if mode == "rapido" else settings.demucs_6s_model
         plan = [(MODES[mode]["stage"], 1.0)]
@@ -123,7 +127,7 @@ def separate(
     return SeparationResult(stems=stems, warnings=warnings, seconds=time.time() - start)
 
 
-def _detailed(audio, split_drums, warnings, progress) -> dict[str, np.ndarray]:
+def _detailed(audio, split_drums, warnings, progress, cache_dir: Path | None) -> dict[str, np.ndarray]:
     from .separators import roformer_backend as rf
 
     sr = settings.sample_rate
@@ -139,28 +143,39 @@ def _detailed(audio, split_drums, warnings, progress) -> dict[str, np.ndarray]:
         plan.append((DRUM_STAGE, 0.05))
     st = _Stages(plan, progress)
 
+    # As 3 etapas pesadas salvam o resultado em cache_dir: se o processo cair
+    # (ex.: falta de memória), a próxima tentativa continua de onde parou.
+
     # 1) Voz x instrumental com RoFormer.
     p = st.next()
-    vocal_split = _try_roformer(lambda: rf.split_two(audio, settings.vocal_model, "vocals", p), warnings, "Voz em alta qualidade")
+
+    def vocal_step():
+        r = _try_roformer(lambda: rf.split_two(audio, settings.vocal_model, "vocals", p), warnings, "Voz em alta qualidade")
+        return None if r is None else {"voz": r[0], "instrumental": r[1]}
+
+    vocal_split = _checkpoint(cache_dir, "1_voz", p, vocal_step)
 
     # 2) Demucs 6 stems no instrumental (ou no mix, se o RoFormer falhou).
     p = st.next()
     if vocal_split is not None:
-        vocals, instrumental = vocal_split
-        stems = demucs_backend.separate(instrumental, settings.demucs_6s_model, p)
+        vocals, instrumental = vocal_split["voz"], vocal_split["instrumental"]
+        stems = _checkpoint(cache_dir, "2_demucs_instrumental", p, lambda: demucs_backend.separate(instrumental, settings.demucs_6s_model, p))
         # Restos de voz que o Demucs achou no instrumental vão para "outros".
         stems["outros"] = stems["outros"] + stems.pop("vocal")
     else:
-        stems = demucs_backend.separate(audio, settings.demucs_6s_model, p)
+        stems = _checkpoint(cache_dir, "2_demucs_mix", p, lambda: demucs_backend.separate(audio, settings.demucs_6s_model, p))
         vocals = stems.pop("vocal")
 
     # 3) Voz principal x backing vocals.
     p = st.next()
-    lead_split = _try_roformer(
-        lambda: rf.split_two(vocals, settings.karaoke_model, "vocals", p), warnings, "Voz principal x backing"
-    )
+
+    def lead_step():
+        r = _try_roformer(lambda: rf.split_two(vocals, settings.karaoke_model, "vocals", p), warnings, "Voz principal x backing")
+        return None if r is None else {"vocal_principal": r[0], "backing_vocals": r[1]}
+
+    lead_split = _checkpoint(cache_dir, "3_karaoke", p, lead_step)
     if lead_split is not None:
-        stems["vocal_principal"], stems["backing_vocals"] = lead_split
+        stems.update(lead_split)
     else:
         stems["vocal"] = vocals
 
@@ -185,6 +200,26 @@ def _detailed(audio, split_drums, warnings, progress) -> dict[str, np.ndarray]:
     if split_drums:
         stems.update(_split_drums(stems.pop("bateria"), sr, warnings, st.next()))
     return stems
+
+
+def _checkpoint(cache_dir: Path | None, key: str, progress, fn) -> dict[str, np.ndarray] | None:
+    """Executa ``fn()`` (que devolve ``{nome: áudio}`` ou None) guardando o resultado em disco.
+
+    Se a etapa já foi concluída numa tentativa anterior, só carrega os arquivos.
+    """
+    if cache_dir is None:
+        return fn()
+    folder = cache_dir / key
+    if (folder / "ok").exists():
+        progress(1.0)
+        return {f.stem: audio_io.read_wav(f) for f in sorted(folder.glob("*.wav"))}
+    result = fn()
+    if result is not None:
+        folder.mkdir(parents=True, exist_ok=True)
+        for name, x in result.items():
+            audio_io.save_wav_float(folder / f"{name}.wav", x)
+        (folder / "ok").touch()
+    return result
 
 
 def _split_drums(drums: np.ndarray, sr: int, warnings: list[str], progress) -> dict[str, np.ndarray]:

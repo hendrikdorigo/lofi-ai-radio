@@ -64,6 +64,12 @@ export const api = {
   health: () => fetch("/api/saude").then((r) => check<Health>(r)),
   jobs: () => fetch("/api/jobs").then((r) => check<Job[]>(r)),
   job: (id: string) => fetch(`/api/jobs/${id}`).then((r) => check<Job>(r)),
+  retry: (id: string, mode?: string) =>
+    fetch(`/api/jobs/${id}/tentar-novamente`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ modo: mode ?? null }),
+    }).then((r) => check<Job>(r)),
   remove: (id: string) => fetch(`/api/jobs/${id}`, { method: "DELETE" }).then((r) => check<void>(r)),
   peaks: (id: string) => fetch(`/api/jobs/${id}/ondas`).then((r) => check<Record<string, number[]>>(r)),
 
@@ -92,15 +98,18 @@ export const api = {
     });
   },
 
-  /** Acompanha o job em tempo real via Server-Sent Events. Devolve função para parar. */
-  watch(id: string, onUpdate: (job: Job) => void): () => void {
+  /** Acompanha o job em tempo real via Server-Sent Events. Devolve função para parar.
+   *  ``onConnection(false)`` avisa quando o servidor parou de responder. */
+  watch(id: string, onUpdate: (job: Job) => void, onConnection: (ok: boolean) => void = () => {}): () => void {
     const source = new EventSource(`/api/jobs/${id}/eventos`);
     source.onmessage = (e) => {
+      onConnection(true);
       const job = JSON.parse(e.data) as Job;
       onUpdate(job);
       if (job.status === "concluido" || job.status === "erro") source.close();
     };
-    // Se a conexão cair, o EventSource reconecta sozinho.
+    // Se a conexão cair, o EventSource tenta reconectar sozinho; avisamos a tela.
+    source.onerror = () => onConnection(false);
     return () => source.close();
   },
 

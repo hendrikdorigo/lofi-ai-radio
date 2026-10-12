@@ -3,7 +3,15 @@ import { Job } from "../lib/api";
 import { formatDuration, MODE_LABELS } from "../lib/format";
 
 /** Tela de espera: barra de progresso em tempo real, etapa atual e posição na fila. */
-export function ProgressPanel({ job, onBack }: { job: Job; onBack: () => void }) {
+interface Props {
+  job: Job;
+  offline: boolean;
+  onBack: () => void;
+  onRetry: (mode?: string) => Promise<void>;
+}
+
+export function ProgressPanel({ job, offline, onBack, onRetry }: Props) {
+  const [retrying, setRetrying] = useState(false);
   const [now, setNow] = useState(Date.now() / 1000);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now() / 1000), 1000);
@@ -25,15 +33,47 @@ export function ProgressPanel({ job, onBack }: { job: Job; onBack: () => void })
           Verifique se o arquivo toca normalmente e se há memória livre. Se for a primeira execução, o servidor precisa de
           internet para baixar os modelos.
         </p>
-        <button className="btn-primary" onClick={onBack}>
-          Tentar outra música
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            className="btn-primary"
+            disabled={retrying}
+            onClick={() => {
+              setRetrying(true);
+              onRetry().finally(() => setRetrying(false));
+            }}
+          >
+            Tentar de novo{job.mode === "detalhado" ? " (continua de onde parou)" : ""}
+          </button>
+          {job.mode === "detalhado" && (
+            <button
+              className="btn-ghost"
+              disabled={retrying}
+              onClick={() => {
+                setRetrying(true);
+                onRetry("completo").finally(() => setRetrying(false));
+              }}
+              title="Mais rápido e usa bem menos memória"
+            >
+              Tentar no modo Completo
+            </button>
+          )}
+          <button className="btn-ghost" onClick={onBack}>
+            Enviar outra música
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="card space-y-5 p-6">
+      {offline && (
+        <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-300">
+          ⚠ O servidor não está respondendo — o progresso abaixo pode estar parado. Se isso continuar, ele provavelmente
+          caiu por falta de memória: reinicie o StemSplit (no Docker, reinicie o Docker Desktop) e use "Tentar de novo"
+          no histórico.
+        </div>
+      )}
       <div>
         <h2 className="truncate text-xl font-semibold">{job.title}</h2>
         <p className="text-sm text-neutral-400">Modo {MODE_LABELS[job.mode] ?? job.mode}</p>

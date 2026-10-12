@@ -7,6 +7,7 @@ Rotas principais (todas sob ``/api``):
     GET    /jobs                          histórico
     GET    /jobs/{id}                     estado de um job
     DELETE /jobs/{id}                     apaga job e arquivos
+    POST   /jobs/{id}/tentar-novamente    recoloca na fila um job com erro (opcional: outro modo)
     GET    /jobs/{id}/eventos             progresso em tempo real (Server-Sent Events)
     GET    /jobs/{id}/ondas               formas de onda de todos os stems
     GET    /jobs/{id}/previa/{stem}       MP3 para o player (?tom=-2 transpõe)
@@ -151,6 +152,22 @@ def delete_job(job_id: str) -> None:
         manager.delete(job_id)
     except RuntimeError as exc:
         raise HTTPException(409, str(exc)) from exc
+
+
+class RetryRequest(BaseModel):
+    modo: str | None = None
+
+
+@app.post("/api/jobs/{job_id}/tentar-novamente")
+def retry_job(job_id: str, body: RetryRequest | None = None) -> dict:
+    _job_or_404(job_id)
+    try:
+        job = manager.retry(job_id, body.modo if body else None)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return _job_payload(job)
 
 
 @app.get("/api/jobs/{job_id}/eventos")

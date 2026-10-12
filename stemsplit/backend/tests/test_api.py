@@ -18,7 +18,7 @@ def client(monkeypatch):
 
     from stemsplit import api, jobs, pipeline
 
-    def fake_separate(audio, mode, split_drums, progress):
+    def fake_separate(audio, mode, split_drums, progress, cache_dir=None):
         for i in range(5):
             progress("Separando (teste)", i / 5)
         n = audio.shape[1]
@@ -111,3 +111,28 @@ def test_invalid_audio_marks_job_as_error(client):
     job = _wait_done(client, r.json()["id"])
     assert job["status"] == "erro"
     assert "Não consegui ler" in job["error"]
+
+
+def test_interrupted_job_becomes_error_and_can_be_retried(client):
+    from stemsplit import api, jobs
+
+    r = client.post("/api/jobs", files={"arquivo": ("a.wav", _wav_bytes(), "audio/wav")}, data={"modo": "detalhado"})
+    job_id = r.json()["id"]
+    _wait_done(client, job_id)
+
+    # Simula queda do servidor no meio do processamento e um reinício.
+    job = jobs.manager.get(job_id)
+    job.status = "processando"
+    jobs.manager._save(job)
+    fresh = jobs.JobManager()
+    fresh.load_history()
+    assert fresh.get(job_id).status == "erro"
+    assert "memória" in fresh.get(job_id).error
+
+    api.manager._jobs[job_id] = fresh.get(job_id)
+    assert client.post(f"/api/jobs/{job_id}/tentar-novamente", json={"modo": "turbo"}).status_code == 400
+    r = client.post(f"/api/jobs/{job_id}/tentar-novamente", json={"modo": "completo"})
+    assert r.status_code == 200 and r.json()["mode"] == "completo"
+    assert _wait_done(client, job_id)["status"] == "concluido"
+    # Só jobs com erro podem ser refeitos.
+    assert client.post(f"/api/jobs/{job_id}/tentar-novamente").status_code == 409

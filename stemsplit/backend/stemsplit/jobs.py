@@ -11,7 +11,11 @@ Cada música enviada vira um *job* com pasta própria em ``data/jobs/<id>/``::
 
 Um único worker processa um job por vez — a GPU/CPU fica toda para ele e não
 falta memória. O estado é salvo em disco, então o histórico sobrevive a
-reinícios e jobs interrompidos voltam para a fila.
+reinícios. Jobs que estavam *na fila* voltam para a fila; jobs que estavam
+*processando* quando o servidor caiu viram erro (a causa mais comum é falta de
+memória, e retomar sozinho faria o servidor cair de novo em loop). O usuário
+pode tentar de novo: no modo Detalhado as etapas já concluídas ficam em
+``cache/`` e não são refeitas.
 """
 
 from __future__ import annotations
@@ -31,6 +35,12 @@ from .config import settings
 from .device import device_label
 
 JOB_ID_LEN = 12
+
+INTERRUPTED_MSG = (
+    "O processamento foi interrompido porque o servidor parou no meio do caminho. "
+    "A causa mais comum é falta de memória (RAM) — principalmente no modo Detalhado. "
+    "Você pode tentar de novo (as etapas já concluídas são aproveitadas) ou usar o modo Completo."
+)
 
 
 @dataclass
@@ -90,8 +100,10 @@ class JobManager:
             except Exception:  # noqa: BLE001 - ignora job corrompido
                 continue
             self._jobs[job.id] = job
-            if job.status in ("na_fila", "processando"):
-                job.status, job.progress, job.stage = "na_fila", 0.0, "Retomando após reinício"
+            if job.status == "processando":
+                job.status, job.stage, job.error = "erro", "Interrompido", INTERRUPTED_MSG
+                self._save(job)
+            elif job.status == "na_fila":
                 self._queue.put(job.id)
 
     def _save(self, job: Job) -> None:
@@ -141,6 +153,24 @@ class JobManager:
         ids = [j.id for j in waiting]
         return ids.index(job_id) + 1 if job_id in ids else None
 
+    def retry(self, job_id: str, mode: str | None = None) -> Job:
+        """Recoloca na fila um job que deu erro, opcionalmente em outro modo."""
+        job = self.get(job_id)
+        if job is None:
+            raise KeyError(job_id)
+        if job.status != "erro":
+            raise RuntimeError("Só dá para tentar de novo uma música que deu erro.")
+        if mode and mode != job.mode:
+            if mode not in pipeline.MODES:
+                raise ValueError(f"Modo inválido: {mode}")
+            job.mode = mode
+            shutil.rmtree(job.dir / "cache", ignore_errors=True)
+        job.status, job.progress, job.error = "na_fila", 0.0, None
+        job.stage, job.created_at, job.finished_at = "Aguardando na fila", time.time(), None
+        self._touch(job, persist=True)
+        self._queue.put(job.id)
+        return job
+
     def delete(self, job_id: str) -> bool:
         job = self.get(job_id)
         if job is None:
@@ -189,11 +219,12 @@ class JobManager:
         def on_progress(stage: str, frac: float) -> None:
             self._report(job, stage, 0.05 + 0.85 * frac)
 
-        result = pipeline.separate(audio, job.mode, job.split_drums, on_progress)
+        result = pipeline.separate(audio, job.mode, job.split_drums, on_progress, cache_dir=job.dir / "cache")
         job.warnings = result.warnings
 
         self._report(job, "Gerando prévias e formas de onda", 0.9)
         save_stems(job.dir, result.stems)
+        shutil.rmtree(job.dir / "cache", ignore_errors=True)  # etapas intermediárias não são mais necessárias
 
         job.stems = stem_catalog.describe(list(result.stems))
         job.status, job.progress, job.stage = "concluido", 1.0, "Pronto!"

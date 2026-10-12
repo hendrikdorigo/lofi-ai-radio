@@ -116,24 +116,46 @@ function JobView({
 }) {
   const [job, setJob] = useState<Job | null>(null);
   const [missing, setMissing] = useState(false);
+  const [offline, setOffline] = useState(false);
+  const [attempt, setAttempt] = useState(0); // muda a cada "tentar de novo" para reabrir o acompanhamento
 
   useEffect(() => {
     let stop: (() => void) | undefined;
+    let cancelled = false;
     api
       .job(jobId)
       .then((j) => {
+        if (cancelled) return;
         setJob(j);
         if (j.status !== "concluido" && j.status !== "erro") {
-          stop = api.watch(jobId, (updated) => {
-            setJob(updated);
-            if (updated.status === "concluido" || updated.status === "erro") onChange();
-          });
+          stop = api.watch(
+            jobId,
+            (updated) => {
+              setJob(updated);
+              if (updated.status === "concluido" || updated.status === "erro") onChange();
+            },
+            (ok) => setOffline(!ok),
+          );
         }
       })
       .catch(() => setMissing(true));
-    return () => stop?.();
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId]);
+  }, [jobId, attempt]);
+
+  const retry = async (mode?: string) => {
+    try {
+      setJob(await api.retry(jobId, mode));
+      setOffline(false);
+      setAttempt((n) => n + 1);
+      onChange();
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  };
 
   if (missing) {
     return (
@@ -147,5 +169,5 @@ function JobView({
   }
   if (!job) return <div className="card h-40 animate-pulse" />;
   if (job.status === "concluido") return <Player job={job} health={health} />;
-  return <ProgressPanel job={job} onBack={onBack} />;
+  return <ProgressPanel job={job} offline={offline} onBack={onBack} onRetry={retry} />;
 }

@@ -82,7 +82,7 @@ música ──► BS-RoFormer ──► voz ───────► Mel-Band Ro
 | | Mínimo | Recomendado |
 |---|---|---|
 | Sistema | Linux, Windows (WSL2 ou nativo), macOS | Linux ou Windows com GPU NVIDIA |
-| RAM | 8 GB | 16 GB |
+| RAM | 8 GB (modos Rápido/Completo) | 16 GB (necessário para o modo Detalhado) |
 | GPU | — (roda em CPU) | NVIDIA com 6 GB+ de VRAM (CUDA) |
 | Disco | ~6 GB (dependências + ~2 GB de modelos) | SSD |
 | Primeira execução | Precisa de internet para baixar os modelos | Depois funciona offline |
@@ -119,6 +119,26 @@ Apple Silicon o PyTorch usa MPS automaticamente para o Demucs.
 O histórico e os stems ficam em `./dados` e os modelos em `./modelos` (são
 baixados uma vez só, ~2 GB no total). O app só escuta em `127.0.0.1` — ninguém
 na sua rede consegue acessar.
+
+### Memória do Docker no Windows
+
+No Windows, o Docker roda dentro do WSL2, que por padrão só usa **metade da RAM** do
+PC. O modo Detalhado pode estourar esse limite: aí o próprio Docker trava (no
+navegador aparecem erros `ERR_EMPTY_RESPONSE` e `docker compose ps` responde
+`500 Internal Server Error`). Para liberar mais memória, crie o arquivo
+`C:\Users\<seu usuário>\.wslconfig` com:
+
+```ini
+[wsl2]
+memory=12GB   # ~75% da RAM do PC
+swap=8GB
+```
+
+Depois rode `wsl --shutdown` no PowerShell e abra o Docker Desktop de novo.
+
+Se uma música for interrompida (servidor caiu, PC desligou), ela aparece no
+histórico com erro e os botões **Tentar de novo** — no modo Detalhado as etapas já
+concluídas são aproveitadas — ou **Tentar no modo Completo**, que usa bem menos memória.
 
 ## Instalação manual (sem Docker)
 
@@ -256,6 +276,7 @@ Documentação interativa em **http://localhost:8000/docs**.
 | GET | `/api/jobs/{id}/previa/{stem}?tom=0` | MP3 para o player |
 | GET | `/api/jobs/{id}/baixar/{stem}?formato=wav24&tom=0` | Download de um stem |
 | GET | `/api/jobs/{id}/zip?formato=wav24&tom=0` | Todos os stems em ZIP |
+| POST | `/api/jobs/{id}/tentar-novamente` | Refaz um job com erro (`{"modo": "completo"}` opcional) |
 | POST | `/api/jobs/{id}/mix` | Mix personalizado `{"volumes": {"baixo": 1, "vocal": 0}, "formato": "mp3", "tom": 0}` |
 
 Exemplo com `curl`:
@@ -332,9 +353,12 @@ stemsplit/
    alguns milissegundos ao pular de posição. A velocidade usa o algoritmo do
    navegador (bom até ~70%; abaixo disso fica com mais artefatos) e **não** é
    aplicada aos downloads (a transposição é).
-8. **Um job por vez**: a fila processa uma música de cada vez para não estourar
+8. **Memória**: o modo Detalhado mantém várias versões da música na memória ao mesmo
+   tempo; com pouca RAM (ou com o limite padrão do Docker no Windows) o processo pode
+   ser encerrado pelo sistema. Veja [Memória do Docker no Windows](#memória-do-docker-no-windows).
+9. **Um job por vez**: a fila processa uma música de cada vez para não estourar
    a memória da GPU.
-9. **Sem autenticação**: o app foi feito para uso local. Não exponha a porta na
+10. **Sem autenticação**: o app foi feito para uso local. Não exponha a porta na
    internet.
 
 ## Sugestões de melhoria
