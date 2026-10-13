@@ -130,14 +130,14 @@ const TRABALHOS = [
     plataforma: "TikTok"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "Shrek",
+    imagemOriginal: "imagens/trabalho12-original.jpg",
+    imagemReleitura: "imagens/trabalho12-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Maria Luiza, Manuela, Larissa",
+    plataforma: "Filme"
   },
   {
     titulo: "",
