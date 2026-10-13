@@ -90,14 +90,14 @@ const TRABALHOS = [
     plataforma: "TikTok"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "O bixo ta jogando fogo",
+    imagemOriginal: "imagens/trabalho08-original.jpg",
+    imagemReleitura: "imagens/trabalho08-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Andrey, Luis",
+    plataforma: "TikTok"
   },
   {
     titulo: "",
