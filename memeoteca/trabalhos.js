@@ -120,14 +120,14 @@ const TRABALHOS = [
     plataforma: "TikTok"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "Perna Longa preguiçoso",
+    imagemOriginal: "imagens/trabalho11-original.jpg",
+    imagemReleitura: "imagens/trabalho11-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Felipe, Ana Clara, Enzo Alencar",
+    plataforma: "TikTok"
   },
   {
     titulo: "",
