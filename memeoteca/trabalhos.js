@@ -76,7 +76,7 @@ const TRABALHOS = [
     descricao: "",        // ainda não enviada pelos alunos
     pais: "Brasil",
     criador: "Desconhecido",
-    autores: "João Pedro, Murilo, Enzo Alencar",
+    autores: "João Pedro, Murilo, Enzo Augusto",
     plataforma: "TikTok"
   },
   {
