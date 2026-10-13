@@ -158,5 +158,19 @@ const TRABALHOS = [
     criador: "Desconhecido",
     autores: "Antony, Wallison",
     plataforma: "TikTok"
+  },
+  {
+    tipo: "autoral",    // criação dos próprios alunos, sem meme original para comparar
+    titulo: "",
+    imagem: "imagens/trabalho15-autoral.jpg",
+    descricao: "",
+    autores: "Lorena Ramos"
+  },
+  {
+    tipo: "autoral",
+    titulo: "",
+    imagem: "imagens/trabalho16-autoral.jpg",
+    descricao: "",
+    autores: "Gianluca"
   }
 ];
