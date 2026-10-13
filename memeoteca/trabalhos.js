@@ -150,13 +150,13 @@ const TRABALHOS = [
     plataforma: "TikTok"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "A Barbie indignada",
+    imagemOriginal: "imagens/trabalho14-original.jpg",
+    imagemReleitura: "imagens/trabalho14-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Antony, Wallison",
+    plataforma: "TikTok"
   }
 ];
