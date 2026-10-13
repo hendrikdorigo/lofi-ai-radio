@@ -110,14 +110,14 @@ const TRABALHOS = [
     plataforma: "TikTok"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "Peixinho bravinho",
+    imagemOriginal: "imagens/trabalho10-original.jpg",
+    imagemReleitura: "imagens/trabalho10-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Lorena Teixeira, Beatriz",
+    plataforma: "TikTok"
   },
   {
     titulo: "",
