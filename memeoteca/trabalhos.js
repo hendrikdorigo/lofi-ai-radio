@@ -140,14 +140,14 @@ const TRABALHOS = [
     plataforma: "Filme"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "A boneca da cabeça amassada",
+    imagemOriginal: "imagens/trabalho13-original.jpg",
+    imagemReleitura: "imagens/trabalho13-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Maria Eduarda, Lívia Regina",
+    plataforma: "TikTok"
   },
   {
     titulo: "",
