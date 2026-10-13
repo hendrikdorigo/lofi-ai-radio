@@ -100,14 +100,14 @@ const TRABALHOS = [
     plataforma: "TikTok"
   },
   {
-    titulo: "",
-    imagemOriginal: "",
-    imagemReleitura: "",
-    descricao: "",
-    pais: "",
-    criador: "",
-    autores: "",
-    plataforma: ""
+    titulo: "O Jorge Sigma",
+    imagemOriginal: "imagens/trabalho09-original.jpg",
+    imagemReleitura: "imagens/trabalho09-releitura.jpg",
+    descricao: "",        // ainda não enviada pelos alunos
+    pais: "Brasil",
+    criador: "Desconhecido",
+    autores: "Gabriel, Davi, Vinícius",
+    plataforma: "TikTok"
   },
   {
     titulo: "",
