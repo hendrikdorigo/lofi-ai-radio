@@ -514,6 +514,7 @@
       }
       function valor(v) { return (v && String(v).trim()) || ""; }
       function numero(i) { return "Nº " + String(i + 1).padStart(2, "0"); }
+      function semTitulo(t) { return t.tipo === "autoral" && !valor(t.titulo); }
       function titulo(t, i) { return valor(t.titulo) || "Trabalho " + String(i + 1).padStart(2, "0") + " (título a preencher)"; }
 
       function campo(pai, texto) {
@@ -581,7 +582,7 @@
         const top = el("div", "card__top");
         top.append(el("span", "card__num", numero(i)), el("span", "chip", autoral(t) ? "Criação autoral" : "Releitura"));
 
-        const h = el("h3", "card__title", titulo(t, i));
+        const h = semTitulo(t) ? null : el("h3", "card__title", titulo(t, i));
 
         const resumo = el("p", "card__excerpt");
         if (valor(t.descricao)) resumo.textContent = valor(t.descricao);
@@ -598,13 +599,17 @@
         btn.appendChild(el("span", null, "↗")).setAttribute("aria-hidden", "true");
         btn.addEventListener("click", function () { abrir(t, i); });
 
-        c.append(top, h, comparacao(t, i), resumo, meta, btn);
+        c.append(top);
+        if (h) c.append(h);
+        c.append(comparacao(t, i), resumo, meta, btn);
         return c;
       }
 
       function abrir(t, i) {
         document.getElementById("modal-num").textContent = numero(i);
-        document.getElementById("modal-title").textContent = titulo(t, i);
+        const mt = document.getElementById("modal-title");
+        mt.textContent = semTitulo(t) ? "Criação autoral" : titulo(t, i);
+        mt.hidden = semTitulo(t);
         document.getElementById("modal-compare").replaceWith(Object.assign(comparacao(t, i), { id: "modal-compare" }));
 
         document.querySelector(".modal__desc h4").textContent = autoral(t) ? "Sobre o trabalho" : "Descrição do meme";
