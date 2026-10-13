@@ -243,6 +243,10 @@
     }
 
     .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; position: relative; }
+    .compare--single { grid-template-columns: 1fr; }
+    .frame--author figcaption { background: var(--purple); color: #fff; }
+    .frame--author .img-box { outline: 3px solid var(--purple); outline-offset: -3px; aspect-ratio: 16 / 10; }
+    .modal .compare--single { max-width: 760px; margin-inline: auto; }
     .compare__arrow {
       position: absolute; left: 50%; top: calc(50% + 14px);
       transform: translate(-50%, -50%);
@@ -282,6 +286,7 @@
       color: #8a8393; font-size: 14px; line-height: 1.35;
     }
     .placeholder svg { margin: 0 auto; opacity: .55; }
+    .frame--author .placeholder { border-color: #b9a2ff; background: var(--purple-soft); color: var(--purple-dark); }
     .frame--after .placeholder { border-color: #e9c440; background: var(--yellow-soft); color: #7a6a2a; }
 
     .card__excerpt {
@@ -537,9 +542,22 @@
         return p;
       }
 
+      function autoral(t) { return t.tipo === "autoral"; }
+
       function comparacao(t, i) {
-        const wrap = el("div", "compare");
         const nome = titulo(t, i);
+
+        if (autoral(t)) {
+          const unico = el("div", "compare compare--single");
+          const fig = el("figure", "frame frame--author");
+          const cap = el("figcaption", null, "CRIAÇÃO ");
+          cap.appendChild(el("small", null, "— FEITA PELOS ALUNOS"));
+          fig.append(cap, imagem(t.imagem, "Criação dos alunos: " + nome, "Espaço para a criação dos alunos"));
+          unico.appendChild(fig);
+          return unico;
+        }
+
+        const wrap = el("div", "compare");
 
         const antes = el("figure", "frame frame--before");
         const capA = el("figcaption", null, "ANTES ");
@@ -561,13 +579,13 @@
         const c = el("article", "card");
 
         const top = el("div", "card__top");
-        top.append(el("span", "card__num", numero(i)), el("span", "chip", "Releitura"));
+        top.append(el("span", "card__num", numero(i)), el("span", "chip", autoral(t) ? "Criação autoral" : "Releitura"));
 
         const h = el("h3", "card__title", titulo(t, i));
 
         const resumo = el("p", "card__excerpt");
         if (valor(t.descricao)) resumo.textContent = valor(t.descricao);
-        else resumo.appendChild(el("span", "empty", "Descrição do meme a preencher."));
+        else resumo.appendChild(el("span", "empty", autoral(t) ? "Descrição do trabalho a preencher." : "Descrição do meme a preencher."));
 
         const meta = el("div", "card__meta");
         const autores = el("span", "chip");
@@ -589,20 +607,25 @@
         document.getElementById("modal-title").textContent = titulo(t, i);
         document.getElementById("modal-compare").replaceWith(Object.assign(comparacao(t, i), { id: "modal-compare" }));
 
+        document.querySelector(".modal__desc h4").textContent = autoral(t) ? "Sobre o trabalho" : "Descrição do meme";
         const desc = document.getElementById("modal-desc");
         desc.replaceChildren();
         campo(desc, t.descricao);
 
         const info = document.getElementById("modal-info");
         info.replaceChildren();
-        [
+        (autoral(t) ? [
+          ["Autores da criação", t.autores],
+          ["Formato", "Criação autoral"],
+          ["Mídia", "Fotoblog Memeoteca"]
+        ] : [
           ["País de origem", t.pais],
           ["Criador do meme original", t.criador],
           ["Autores da releitura", t.autores],
           ["Plataforma", t.plataforma],
           ["Formato", "Releitura"],
           ["Mídia", "Fotoblog Memeoteca"]
-        ].forEach(function (par) {
+        ]).forEach(function (par) {
           info.append(el("dt", null, par[0]), campo(el("dd"), par[1]));
         });
 
